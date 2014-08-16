@@ -12,11 +12,5 @@ Status:
 - Stream by AMD_pinned_memory: ported, tested against AMD Radeon 7770
 - Stream by ARB_copy_buffer: ported, tested against nVIDIA Geforce GTX 860M
 - Stream by INTEL_map_texture: ported, untested
-- Capability detection: not ported yet, manual switch required for now
-- Vsync: not ported yet.
+- Vsync: not ported, not needed.
 
-
-Issues:
-
-- On AMD cards, starting with Asynchronous PBO shows blank window. But switching to AMD_pinned_memory
-  and then switching back to Asynchronous PBO works fine.

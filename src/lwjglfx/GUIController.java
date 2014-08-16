@@ -142,7 +142,8 @@ public class GUIController implements Initializable {
                             renderImage = new WritableImage(width, height);
                             gearsView.setImage(renderImage);
                         }
-
+                        data.rewind();
+                        assert ( data.remaining() == stride * height );
                         // Upload the image to JavaFX
                         renderImage.getPixelWriter().setPixels(0, 0, width, height, PixelFormat.getByteBgraPreInstance(), data, stride);
                     } finally {
@@ -167,13 +168,14 @@ public class GUIController implements Initializable {
 
 		final String vendor = gl.glGetString(GL_VENDOR);
 		final String version = gl.glGetString(GL_VERSION);
+        final String renderer = gl.glGetString(GL_RENDERER);
 
 		Platform.runLater(() -> {
             // Listen for FPS changes and update the fps label
             final ReadOnlyIntegerProperty fps = gears.fpsProperty();
 
             fpsLabel.textProperty().bind(createStringBinding(() -> "FPS: " + fps.get(), fps));
-            glInfoLabel.setText(vendor + " OpenGL " + version);
+            glInfoLabel.setText(vendor + "; " + version + "; " + renderer);
 
             renderChoice.setItems(observableList(renderStreamFactories));
             for ( int i = 0; i < renderStreamFactories.size(); i++ ) {

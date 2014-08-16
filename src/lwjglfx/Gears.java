@@ -100,6 +100,10 @@ final class Gears {
         this.fps = new ReadOnlyIntegerWrapper(this, "fps", 0);
 
         GLCapabilities caps = new GLCapabilities(GLProfile.get(GLProfile.GL4bc));
+        caps.setHardwareAccelerated(true);
+        caps.setDepthBits(24);
+        // caps.setNumSamples(4);
+        // caps.setSampleBuffers(true);
         caps.setOnscreen(false);
         caps.setPBuffer(true);
         JoglWrapper.glProfile = caps.getGLProfile();

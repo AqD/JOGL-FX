@@ -46,8 +46,7 @@ final class RenderStreamPBODefault extends RenderStreamPBO {
 		}
 
 		public RenderStream create(final StreamHandler handler, final int samples, final int transfersToBuffer) {
-			final ContextCapabilities caps = new ContextCapabilities();
-
+			final ContextCapabilities caps = ContextCapabilities.get();
 			return new RenderStreamPBODefault(
 				handler, samples, transfersToBuffer,
 				// Detect NVIDIA and use GetTexImage instead of ReadPixels
@@ -61,12 +60,12 @@ final class RenderStreamPBODefault extends RenderStreamPBO {
 	RenderStreamPBODefault(final StreamHandler handler, final int samples, final int transfersToBuffer, final ReadbackType readbackType) {
 		super(handler, samples, transfersToBuffer, readbackType);
 
-		final ContextCapabilities caps = new ContextCapabilities();
+		final ContextCapabilities caps = ContextCapabilities.get();
 
-		USE_COPY_BUFFER_SUB_DATA = (caps.OpenGL31 || caps.GL_ARB_copy_buffer) &&
+		USE_COPY_BUFFER_SUB_DATA = (caps.OpenGL31 || caps.GL_ARB_copy_buffer) /*&&
 		                           // Disable on ATI/AMD GPUs: ARB_copy_buffer is unoptimized on current
 		                           // drivers and kills performance. TODO: Fix?
-		                           !StreamUtil.isAMD(caps);
+		                           !StreamUtil.isAMD(caps)*/;
 	}
 
 	protected void pinBuffer(final int index) {

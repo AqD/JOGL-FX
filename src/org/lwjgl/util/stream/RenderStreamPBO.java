@@ -68,7 +68,7 @@ abstract class RenderStreamPBO extends StreamBufferedPBO implements RenderStream
 
 		this.readbackType = readbackType;
 
-		final ContextCapabilities caps = new ContextCapabilities();
+		final ContextCapabilities caps = ContextCapabilities.get();
 
 		fboUtil = StreamUtil.getFBOUtil(caps);
 		renderFBO = fboUtil.genFramebuffers();

@@ -83,7 +83,7 @@ final class RenderStreamINTEL extends StreamBuffered implements RenderStream {
 	RenderStreamINTEL(final StreamHandler handler, final int samples, final int transfersToBuffer) {
 		super(handler, transfersToBuffer);
 
-		final ContextCapabilities caps = new ContextCapabilities();
+		final ContextCapabilities caps = ContextCapabilities.get();
 
 		this.strideBuffer = BufferUtils.createIntBuffer(1);
 		this.layoutBuffer = BufferUtils.createIntBuffer(1);

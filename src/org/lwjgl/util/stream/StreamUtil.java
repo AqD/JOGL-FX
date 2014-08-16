@@ -106,7 +106,7 @@ public final class StreamUtil {
 	static int getStride(final int width) {
 		// Force a packed format on AMD. Their drivers show unstable
 		// performance if we mess with (UN)PACK_ROW_LENGTH.
-		return isAMD(new ContextCapabilities()) ?
+		return isAMD(ContextCapabilities.get()) ?
 		       width * 4 :
 		       getStride(width, TEX_ROW_ALIGNMENT);
 	}
@@ -149,15 +149,15 @@ public final class StreamUtil {
 	}
 
 	public static List<RenderStreamFactory> getRenderStreamImplementations() {
-		final ContextCapabilities caps = new ContextCapabilities();
+		final ContextCapabilities caps = ContextCapabilities.get();
 
 		checkCapabilities(caps);
 
 		final List<RenderStreamFactory> list = new ArrayList<>();
 
-        addIfSupported(caps, list, RenderStreamPBODefault.FACTORY);
-		addIfSupported(caps, list, RenderStreamPBOAMD.FACTORY);
+        addIfSupported(caps, list, RenderStreamPBOAMD.FACTORY);
 		addIfSupported(caps, list, RenderStreamPBOCopy.FACTORY);
+        addIfSupported(caps, list, RenderStreamPBODefault.FACTORY);
 		addIfSupported(caps, list, RenderStreamINTEL.FACTORY);
 
 		return list;
