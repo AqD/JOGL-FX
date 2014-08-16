@@ -31,15 +31,12 @@
  */
 package org.lwjgl.util.stream;
 
-import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.ContextCapabilities;
-import org.lwjgl.opengl.GLContext;
 
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL12.*;
-import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL21.*;
-import static org.lwjgl.opengl.GL30.*;
+import static javax.media.opengl.GL4bc.*;
+import static org.lwjgl.opengl.JoglWrapper.gl;
+import static org.lwjgl.opengl.JoglWrapper.glDeleteBuffers;
+import static org.lwjgl.opengl.JoglWrapper.glDeleteTextures;
 
 /** Implements streaming PBO updates from a framebuffer object. */
 abstract class RenderStreamPBO extends StreamBufferedPBO implements RenderStream {
@@ -71,7 +68,7 @@ abstract class RenderStreamPBO extends StreamBufferedPBO implements RenderStream
 
 		this.readbackType = readbackType;
 
-		final ContextCapabilities caps = GLContext.getCapabilities();
+		final ContextCapabilities caps = new ContextCapabilities();
 
 		fboUtil = StreamUtil.getFBOUtil(caps);
 		renderFBO = fboUtil.genFramebuffers();
@@ -119,7 +116,7 @@ abstract class RenderStreamPBO extends StreamBufferedPBO implements RenderStream
 			depthBuffer = StreamUtil.createRenderBuffer(fboUtil, width, height, samples, GL_DEPTH24_STENCIL8)
 		);
 
-		glViewport(0, 0, width, height);
+		gl.glViewport(0, 0, width, height);
 
 		fboUtil.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
@@ -191,7 +188,7 @@ abstract class RenderStreamPBO extends StreamBufferedPBO implements RenderStream
 		final int trgPBO = (int)(bufferIndex % transfersToBuffer);
 		final int srcPBO = (int)((bufferIndex - 1) % transfersToBuffer);
 
-		glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[trgPBO]);
+		gl.glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[trgPBO]);
 
 		// Back-pressure. Make sure we never buffer more than <transfersToBuffer> frames ahead.
 		if ( processingState.get(trgPBO) )
@@ -229,21 +226,21 @@ abstract class RenderStreamPBO extends StreamBufferedPBO implements RenderStream
 
 	protected void readBack(final int index) {
 		// Stride in pixels
-		glPixelStorei(GL_PACK_ROW_LENGTH, stride >> 2);
+		gl.glPixelStorei(GL_PACK_ROW_LENGTH, stride >> 2);
 
 		// Asynchronously transfer current frame
 		if ( readbackType == ReadbackType.READ_PIXELS ) {
 			fboUtil.bindFramebuffer(GL_READ_FRAMEBUFFER, msaaResolveFBO == 0 ? renderFBO : msaaResolveFBO);
-			glReadPixels(0, 0, width, height, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, 0);
+            gl.glReadPixels(0, 0, width, height, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, 0);
 			fboUtil.bindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 		} else {
-			glBindTexture(GL_TEXTURE_2D, msaaResolveFBO == 0 ? rgbaBuffer : msaaResolveBuffer);
-			glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, 0);
-			glBindTexture(GL_TEXTURE_2D, 0);
+            gl.glBindTexture(GL_TEXTURE_2D, msaaResolveFBO == 0 ? rgbaBuffer : msaaResolveBuffer);
+            gl.glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, 0);
+            gl.glBindTexture(GL_TEXTURE_2D, 0);
 		}
 
 		// Restore PACK_ROW_LENGTH
-		glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+        gl.glPixelStorei(GL_PACK_ROW_LENGTH, 0);
 	}
 
 	protected abstract void copyFrames(final int src, final int trg);
@@ -253,16 +250,16 @@ abstract class RenderStreamPBO extends StreamBufferedPBO implements RenderStream
 	protected void destroyObjects() {
 		for ( int i = 0; i < semaphores.length; i++ ) {
 			if ( processingState.get(i) ) {
-				glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[i]);
+                gl.glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[i]);
 				waitForProcessingToComplete(i);
 			}
 		}
 
-		glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+        gl.glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 
 		for ( int i = 0; i < pbos.length; i++ ) {
 			if ( pbos[i] != 0 )
-				glDeleteBuffers(pbos[i]);
+                glDeleteBuffers(pbos[i]);
 		}
 
 		if ( msaaResolveBuffer != 0 ) {

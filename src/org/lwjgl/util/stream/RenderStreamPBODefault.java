@@ -32,12 +32,10 @@
 package org.lwjgl.util.stream;
 
 import org.lwjgl.opengl.ContextCapabilities;
-import org.lwjgl.opengl.GLContext;
 import org.lwjgl.util.stream.StreamUtil.RenderStreamFactory;
 
-import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL21.*;
-import static org.lwjgl.opengl.GL31.*;
+import static javax.media.opengl.GL4bc.*;
+import static org.lwjgl.opengl.JoglWrapper.gl;
 
 /** Default StreamPBOReader implementation: Asynchronous ReadPixels to PBOs */
 final class RenderStreamPBODefault extends RenderStreamPBO {
@@ -48,7 +46,7 @@ final class RenderStreamPBODefault extends RenderStreamPBO {
 		}
 
 		public RenderStream create(final StreamHandler handler, final int samples, final int transfersToBuffer) {
-			final ContextCapabilities caps = GLContext.getCapabilities();
+			final ContextCapabilities caps = new ContextCapabilities();
 
 			return new RenderStreamPBODefault(
 				handler, samples, transfersToBuffer,
@@ -63,7 +61,7 @@ final class RenderStreamPBODefault extends RenderStreamPBO {
 	RenderStreamPBODefault(final StreamHandler handler, final int samples, final int transfersToBuffer, final ReadbackType readbackType) {
 		super(handler, samples, transfersToBuffer, readbackType);
 
-		final ContextCapabilities caps = GLContext.getCapabilities();
+		final ContextCapabilities caps = new ContextCapabilities();
 
 		USE_COPY_BUFFER_SUB_DATA = (caps.OpenGL31 || caps.GL_ARB_copy_buffer) &&
 		                           // Disable on ATI/AMD GPUs: ARB_copy_buffer is unoptimized on current
@@ -72,33 +70,37 @@ final class RenderStreamPBODefault extends RenderStreamPBO {
 	}
 
 	protected void pinBuffer(final int index) {
-		glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[index]);
+		gl.glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[index]);
 
 		// We don't need to manually synchronized here, MapBuffer will block until ReadPixels above has finished.
 		// The buffer will be unmapped in waitForProcessingToComplete
-		pinnedBuffers[index] = glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY, height * stride, pinnedBuffers[index]);
+		// pinnedBuffers[index] = glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY, height * stride, pinnedBuffers[index]); AQD
+        pinnedBuffers[index] = gl.glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+        assert (pinnedBuffers[index] != null);
 
-		glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+		gl.glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 	}
 
 	protected void copyFrames(final int src, final int trg) {
 		if ( USE_COPY_BUFFER_SUB_DATA ) {
-			glBindBuffer(GL_COPY_WRITE_BUFFER, pbos[trg]);
-			glCopyBufferSubData(GL_PIXEL_PACK_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, height * stride);
-			glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+			gl.glBindBuffer(GL_COPY_WRITE_BUFFER, pbos[trg]);
+            gl.glCopyBufferSubData(GL_PIXEL_PACK_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, height * stride);
+            gl.glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
 		} else {
-			pinnedBuffers[src] = glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY, height * stride, pinnedBuffers[src]);
+			// pinnedBuffers[src] = glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY, height * stride, pinnedBuffers[src]); AQD
+            pinnedBuffers[src] = gl.glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+            assert (pinnedBuffers[src] != null);
 
-			glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[trg]);
-			glBufferSubData(GL_PIXEL_PACK_BUFFER, 0, pinnedBuffers[src]);
+            gl.glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[trg]);
+            gl.glBufferSubData(GL_PIXEL_PACK_BUFFER, 0, pinnedBuffers[src].remaining(), pinnedBuffers[src]);
 
-			glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[src]);
-			glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+            gl.glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[src]);
+            gl.glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
 		}
 	}
 
 	protected void postProcess(final int index) {
-		glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+		gl.glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
 	}
 
 }

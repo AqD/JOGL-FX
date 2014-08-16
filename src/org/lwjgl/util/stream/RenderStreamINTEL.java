@@ -33,16 +33,15 @@ package org.lwjgl.util.stream;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.ContextCapabilities;
-import org.lwjgl.opengl.GLContext;
 import org.lwjgl.util.stream.StreamUtil.RenderStreamFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL12.*;
-import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.opengl.INTELMapTexture.*;
+import static javax.media.opengl.GL4bc.*;
+import static org.lwjgl.opengl.JoglWrapper.gl;
+import static org.lwjgl.opengl.JoglWrapper.glDeleteTextures;
+import static org.lwjgl.opengl.JoglWrapper.glGenTextures;
 
 /**
  * Optimized StreamPBOReader for Intel IGPs:
@@ -84,7 +83,7 @@ final class RenderStreamINTEL extends StreamBuffered implements RenderStream {
 	RenderStreamINTEL(final StreamHandler handler, final int samples, final int transfersToBuffer) {
 		super(handler, transfersToBuffer);
 
-		final ContextCapabilities caps = GLContext.getCapabilities();
+		final ContextCapabilities caps = new ContextCapabilities();
 
 		this.strideBuffer = BufferUtils.createIntBuffer(1);
 		this.layoutBuffer = BufferUtils.createIntBuffer(1);
@@ -128,24 +127,24 @@ final class RenderStreamINTEL extends StreamBuffered implements RenderStream {
 		depthBuffer = StreamUtil.createRenderBuffer(fboUtil, width, height, samples, GL_DEPTH24_STENCIL8);
 		fboUtil.framebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
 
-		glViewport(0, 0, width, height);
+		gl.glViewport(0, 0, width, height);
 
 		fboUtil.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
 		for ( int i = 0; i < resolveBuffers.length; i++ )
 			resolveBuffers[i] = genLayoutLinearTexture(width, height);
 
-		glBindTexture(GL_TEXTURE_2D, 0);
+		gl.glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 	private static int genLayoutLinearTexture(final int width, final int height) {
 		final int texID = glGenTextures();
 
-		glBindTexture(GL_TEXTURE_2D, texID);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MEMORY_LAYOUT_INTEL, GL_LAYOUT_LINEAR_CPU_CACHED_INTEL);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, (ByteBuffer)null);
+        gl.glBindTexture(GL_TEXTURE_2D, texID);
+        gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MEMORY_LAYOUT_INTEL, GL_LAYOUT_LINEAR_CPU_CACHED_INTEL);
+        gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, (ByteBuffer) null);
 
 		return texID;
 	}
@@ -211,22 +210,25 @@ final class RenderStreamINTEL extends StreamBuffered implements RenderStream {
 	}
 
 	private void copyFrames(final int src, final int trg) {
-		pinnedBuffers[src] = glMapTexture2DINTEL(resolveBuffers[src], 0, height * stride, GL_MAP_READ_BIT, strideBuffer, layoutBuffer, pinnedBuffers[src]);
-		pinnedBuffers[trg] = glMapTexture2DINTEL(resolveBuffers[trg], 0, height * stride, GL_MAP_WRITE_BIT, strideBuffer, layoutBuffer, pinnedBuffers[trg]);
+		// pinnedBuffers[src] = gl.glMapTexture2DINTEL(resolveBuffers[src], 0, height * stride, GL_MAP_READ_BIT, strideBuffer, layoutBuffer, pinnedBuffers[src]);
+        pinnedBuffers[src] = gl.glMapTexture2DINTEL(resolveBuffers[src], 0, GL_MAP_READ_BIT, strideBuffer, layoutBuffer);
+		// pinnedBuffers[trg] = gl.glMapTexture2DINTEL(resolveBuffers[trg], 0, height * stride, GL_MAP_WRITE_BIT, strideBuffer, layoutBuffer, pinnedBuffers[trg]);
+        pinnedBuffers[trg] = gl.glMapTexture2DINTEL(resolveBuffers[trg], 0, GL_MAP_WRITE_BIT, strideBuffer, layoutBuffer);
 
 		pinnedBuffers[trg].put(pinnedBuffers[src]);
 
 		pinnedBuffers[src].flip();
 		pinnedBuffers[trg].flip();
 
-		glUnmapTexture2DINTEL(resolveBuffers[trg], 0);
-		glUnmapTexture2DINTEL(resolveBuffers[src], 0);
+        gl.glUnmapTexture2DINTEL(resolveBuffers[trg], 0);
+        gl.glUnmapTexture2DINTEL(resolveBuffers[src], 0);
 	}
 
 	private void pinBuffer(final int index) {
 		final int texID = resolveBuffers[index];
 
-		pinnedBuffers[index] = glMapTexture2DINTEL(texID, 0, height * stride, GL_MAP_READ_BIT, strideBuffer, layoutBuffer, pinnedBuffers[index]);
+		// pinnedBuffers[index] = gl.glMapTexture2DINTEL(texID, 0, height * stride, GL_MAP_READ_BIT, strideBuffer, layoutBuffer, pinnedBuffers[index]);
+        pinnedBuffers[index] = gl.glMapTexture2DINTEL(texID, 0, GL_MAP_READ_BIT, strideBuffer, layoutBuffer);
 		// TODO: Row alignment is currently hardcoded to 16 pixels
 		// We wouldn't need to do that if we could create a ByteBuffer
 		// from an arbitrary address + length. Consider for LWJGL 3.0?
@@ -236,14 +238,15 @@ final class RenderStreamINTEL extends StreamBuffered implements RenderStream {
 	private void checkStride(final int index, final int texID) {
 		if ( strideBuffer.get(0) != stride ) {
 			System.err.println("Wrong stride: " + stride + ". Should be: " + strideBuffer.get(0));
-			glUnmapTexture2DINTEL(texID, 0);
+            gl.glUnmapTexture2DINTEL(texID, 0);
 			stride = strideBuffer.get(0);
-			pinnedBuffers[index] = glMapTexture2DINTEL(texID, 0, height * stride, GL_MAP_READ_BIT, strideBuffer, layoutBuffer, pinnedBuffers[index]);
+			// pinnedBuffers[index] = gl.glMapTexture2DINTEL(texID, 0, height * stride, GL_MAP_READ_BIT, strideBuffer, layoutBuffer, pinnedBuffers[index]);
+            pinnedBuffers[index] = gl.glMapTexture2DINTEL(texID, 0, GL_MAP_READ_BIT, strideBuffer, layoutBuffer);
 		}
 	}
 
 	protected void postProcess(int index) {
-		glUnmapTexture2DINTEL(resolveBuffers[index], 0);
+        gl.glUnmapTexture2DINTEL(resolveBuffers[index], 0);
 	}
 
 	private void destroyObjects() {
@@ -256,7 +259,7 @@ final class RenderStreamINTEL extends StreamBuffered implements RenderStream {
 		if ( depthBuffer != 0 ) fboUtil.deleteRenderbuffers(depthBuffer);
 
 		for ( int i = 0; i < resolveBuffers.length; i++ ) {
-			glDeleteTextures(resolveBuffers[i]);
+            glDeleteTextures(resolveBuffers[i]);
 			resolveBuffers[i] = 0;
 		}
 	}

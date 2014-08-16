@@ -32,8 +32,7 @@
 package org.lwjgl.util.stream;
 
 import org.lwjgl.opengl.ContextCapabilities;
-import org.lwjgl.opengl.GLContext;
-import org.lwjgl.opengl.GLSync;
+import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -41,16 +40,13 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import sun.misc.Unsafe;
-
-import static org.lwjgl.opengl.EXTFramebufferBlit.*;
-import static org.lwjgl.opengl.EXTFramebufferMultisample.*;
-import static org.lwjgl.opengl.EXTFramebufferObject.*;
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL11.glGetInteger;
-import static org.lwjgl.opengl.GL12.*;
-import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.opengl.GL32.*;
+import static javax.media.opengl.GL4bc.*;
+import static org.lwjgl.opengl.JoglWrapper.gl;
+import static org.lwjgl.opengl.JoglWrapper.glDeleteFramebuffers;
+import static org.lwjgl.opengl.JoglWrapper.glDeleteRenderbuffers;
+import static org.lwjgl.opengl.JoglWrapper.glGenFramebuffers;
+import static org.lwjgl.opengl.JoglWrapper.glGenRenderbuffers;
+import static org.lwjgl.opengl.JoglWrapper.glGenTextures;
 
 /** @author Spasi */
 public final class StreamUtil {
@@ -67,11 +63,11 @@ public final class StreamUtil {
 	static int createRenderTexture(final int width, final int height, final int filter) {
 		final int texID = glGenTextures();
 
-		glBindTexture(GL_TEXTURE_2D, texID);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, (ByteBuffer)null);
-		glBindTexture(GL_TEXTURE_2D, 0);
+		gl.glBindTexture(GL_TEXTURE_2D, texID);
+        gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+        gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+        gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, (ByteBuffer)null);
+        gl.glBindTexture(GL_TEXTURE_2D, 0);
 
 		return texID;
 	}
@@ -93,10 +89,10 @@ public final class StreamUtil {
 		return bufferID;
 	}
 
-	static void waitOnFence(final GLSync[] fences, final int index) {
-		glWaitSync(fences[index], 0, GL_TIMEOUT_IGNORED);
-		glDeleteSync(fences[index]);
-		fences[index] = null;
+	static void waitOnFence(final long[] fences, final int index) {
+		gl.glWaitSync(fences[index], 0, GL_TIMEOUT_IGNORED);
+        gl.glDeleteSync(fences[index]);
+		fences[index] = 0;
 	}
 
 	static boolean isAMD(final ContextCapabilities caps) {
@@ -110,7 +106,7 @@ public final class StreamUtil {
 	static int getStride(final int width) {
 		// Force a packed format on AMD. Their drivers show unstable
 		// performance if we mess with (UN)PACK_ROW_LENGTH.
-		return isAMD(GLContext.getCapabilities()) ?
+		return isAMD(new ContextCapabilities()) ?
 		       width * 4 :
 		       getStride(width, TEX_ROW_ALIGNMENT);
 	}
@@ -153,39 +149,16 @@ public final class StreamUtil {
 	}
 
 	public static List<RenderStreamFactory> getRenderStreamImplementations() {
-		final ContextCapabilities caps = GLContext.getCapabilities();
+		final ContextCapabilities caps = new ContextCapabilities();
 
 		checkCapabilities(caps);
 
-		final List<RenderStreamFactory> list = new ArrayList<RenderStreamFactory>();
+		final List<RenderStreamFactory> list = new ArrayList<>();
 
+        addIfSupported(caps, list, RenderStreamPBODefault.FACTORY);
 		addIfSupported(caps, list, RenderStreamPBOAMD.FACTORY);
 		addIfSupported(caps, list, RenderStreamPBOCopy.FACTORY);
 		addIfSupported(caps, list, RenderStreamINTEL.FACTORY);
-		addIfSupported(caps, list, RenderStreamPBODefault.FACTORY);
-
-		return list;
-	}
-
-	public static TextureStreamFactory getTextureStreamImplementation() {
-		final List<TextureStreamFactory> list = getTextureStreamImplementations();
-
-		if ( list.isEmpty() )
-			throw new UnsupportedOperationException("A supported TextureStream implementation could not be found.");
-
-		return list.get(0);
-	}
-
-	public static List<TextureStreamFactory> getTextureStreamImplementations() {
-		final ContextCapabilities caps = GLContext.getCapabilities();
-
-		checkCapabilities(caps);
-
-		final List<TextureStreamFactory> list = new ArrayList<TextureStreamFactory>();
-
-		addIfSupported(caps, list, TextureStreamINTEL.FACTORY);
-		addIfSupported(caps, list, TextureStreamPBORange.FACTORY);
-		addIfSupported(caps, list, TextureStreamPBODefault.FACTORY);
 
 		return list;
 	}
@@ -225,16 +198,6 @@ public final class StreamUtil {
 
 	}
 
-	public abstract static class TextureStreamFactory extends StreamFactory<TextureStream> {
-
-		protected TextureStreamFactory(final String description) {
-			super(description);
-		}
-
-		public abstract TextureStream create(StreamHandler handler, int transfersToBuffer);
-
-	}
-
 	static int checkSamples(final int samples, final ContextCapabilities caps) {
 		if ( samples <= 1 )
 			return samples;
@@ -242,7 +205,7 @@ public final class StreamUtil {
 		if ( !(caps.OpenGL30 || (caps.GL_EXT_framebuffer_multisample && caps.GL_EXT_framebuffer_blit)) )
 			throw new UnsupportedOperationException("Multisampled rendering on framebuffer objects is not supported.");
 
-		return Math.min(samples, glGetInteger(GL_MAX_SAMPLES));
+		return 4;
 	}
 
 	static final class PageSizeProvider {
@@ -327,19 +290,19 @@ public final class StreamUtil {
 				}
 
 				public void bindFramebuffer(int target, int framebuffer) {
-					glBindFramebuffer(target, framebuffer);
+					gl.glBindFramebuffer(target, framebuffer);
 				}
 
 				public void framebufferTexture2D(int target, int attachment, int textarget, int texture, int level) {
-					glFramebufferTexture2D(target, attachment, textarget, texture, level);
+                    gl.glFramebufferTexture2D(target, attachment, textarget, texture, level);
 				}
 
 				public void framebufferRenderbuffer(int target, int attachment, int renderbuffertarget, int renderbuffer) {
-					glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer);
+                    gl.glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer);
 				}
 
 				public void deleteFramebuffers(int framebuffer) {
-					glDeleteFramebuffers(framebuffer);
+                    glDeleteFramebuffers(framebuffer);
 				}
 
 				public int genRenderbuffers() {
@@ -347,25 +310,26 @@ public final class StreamUtil {
 				}
 
 				public void bindRenderbuffer(int target, int renderbuffer) {
-					glBindRenderbuffer(target, renderbuffer);
+                    gl.glBindRenderbuffer(target, renderbuffer);
 				}
 
 				public void renderbufferStorage(int target, int internalformat, int width, int height) {
-					glRenderbufferStorage(target, internalformat, width, height);
+                    gl.glRenderbufferStorage(target, internalformat, width, height);
 				}
 
 				public void renderbufferStorageMultisample(int target, int samples, int internalformat, int width, int height) {
-					glRenderbufferStorageMultisample(target, samples, internalformat, width, height);
+                    gl.glRenderbufferStorageMultisample(target, samples, internalformat, width, height);
 				}
 
 				public void blitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, int mask, int filter) {
-					glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
+                    gl.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
 				}
 
 				public void deleteRenderbuffers(int renderbuffer) {
-					glDeleteRenderbuffers(renderbuffer);
+                    glDeleteRenderbuffers(renderbuffer);
 				}
 			};
+        /*
 		else if ( caps.GL_EXT_framebuffer_object )
 			return new FBOUtil() {
 				public int genFramebuffers() {
@@ -412,6 +376,7 @@ public final class StreamUtil {
 					glDeleteRenderbuffersEXT(renderbuffer);
 				}
 			};
+			*/
 		else
 			throw new UnsupportedOperationException("Framebuffer object is not available.");
 	}

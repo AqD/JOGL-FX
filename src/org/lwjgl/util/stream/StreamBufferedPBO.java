@@ -31,7 +31,8 @@
  */
 package org.lwjgl.util.stream;
 
-import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.opengl.JoglWrapper.glGenBuffers;
+import static org.lwjgl.opengl.JoglWrapper.gl;
 
 /** Base functionality for streaming PBO transfers. */
 abstract class StreamBufferedPBO extends StreamBuffered {
@@ -50,13 +51,13 @@ abstract class StreamBufferedPBO extends StreamBuffered {
 		for ( int i = 0; i < pbos.length; i++ ) {
 			pbos[i] = glGenBuffers();
 
-			glBindBuffer(pboTarget, pbos[i]);
-			glBufferData(pboTarget, renderBytes, pboUsage);
+			gl.glBindBuffer(pboTarget, pbos[i]);
+			gl.glBufferData(pboTarget, renderBytes, null, pboUsage);
 
 			pinnedBuffers[i] = null;
 		}
 
-		glBindBuffer(pboTarget, 0);
+		gl.glBindBuffer(pboTarget, 0);
 	}
 
 }

@@ -31,12 +31,8 @@
  */
 package lwjglfx;
 
-import java.net.URL;
-import java.util.concurrent.CountDownLatch;
-
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
@@ -44,7 +40,9 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
+
+import java.net.URL;
+import java.util.concurrent.CountDownLatch;
 
 /** The JavaFX application entry point */
 public class JavaFXGears extends Application {
@@ -104,21 +102,15 @@ public class JavaFXGears extends Application {
 			return;
 		}
 
-		stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-			public void handle(final WindowEvent e) {
-				e.consume();
-				runningLatch.countDown();
-			}
-		});
+		stage.setOnCloseRequest(e -> {
+            e.consume();
+            runningLatch.countDown();
+        });
 
 		new Thread("LWJGL Renderer") {
 			public void run() {
 				controller.runGears(runningLatch);
-				Platform.runLater(new Runnable() {
-					public void run() {
-						stage.close();
-					}
-				});
+				Platform.runLater(() -> stage.close());
 			}
 		}.start();
 	}
