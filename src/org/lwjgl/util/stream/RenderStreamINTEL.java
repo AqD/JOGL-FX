@@ -33,6 +33,7 @@ package org.lwjgl.util.stream;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.ContextCapabilities;
+import lwjglfx.JoglFactory;
 import org.lwjgl.util.stream.StreamUtil.RenderStreamFactory;
 
 import java.nio.ByteBuffer;
@@ -95,6 +96,7 @@ final class RenderStreamINTEL extends StreamBuffered implements RenderStream {
 		resolveBuffers = new int[transfersToBuffer];
 
 		this.samples = StreamUtil.checkSamples(samples, caps);
+        JoglFactory.logger.finest(this.getClass().getSimpleName() + ": created, msaa " + this.samples);
 	}
 
 	public StreamHandler getHandler() {

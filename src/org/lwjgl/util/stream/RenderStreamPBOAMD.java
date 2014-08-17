@@ -33,6 +33,7 @@ package org.lwjgl.util.stream;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.ContextCapabilities;
+import lwjglfx.JoglFactory;
 import org.lwjgl.util.stream.StreamUtil.PageSizeProvider;
 import org.lwjgl.util.stream.StreamUtil.RenderStreamFactory;
 
@@ -62,6 +63,7 @@ final class RenderStreamPBOAMD extends RenderStreamPBO {
 		super(handler, samples, transfersToBuffer, ReadbackType.READ_PIXELS);
 
 		fences = new long[this.transfersToBuffer];
+        JoglFactory.logger.finest(String.format("%s created: msaa %d, %s", this.getClass().getSimpleName(), samples, ReadbackType.READ_PIXELS));
 	}
 
 	protected void resizeBuffers(final int height, final int stride) {

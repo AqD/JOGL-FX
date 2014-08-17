@@ -7,10 +7,7 @@ package org.lwjgl.opengl;
 
 import org.lwjgl.BufferUtils;
 
-import javax.media.opengl.GL4bc;
-import javax.media.opengl.GLContext;
-import javax.media.opengl.GLDrawableFactory;
-import javax.media.opengl.GLProfile;
+import javax.media.opengl.*;
 import java.nio.IntBuffer;
 
 /**
@@ -20,10 +17,14 @@ import java.nio.IntBuffer;
  */
 public final class JoglWrapper {
 
-    public static GLProfile glProfile;
-    public static GLDrawableFactory factory;
     public static GLContext context;
     public static GL4bc gl;
+
+    public static int glGetInteger(int pname) {
+        IntBuffer intBuffer = BufferUtils.createIntBuffer(32);
+        gl.glGetIntegerv(pname, intBuffer);
+        return intBuffer.get(0);
+    }
 
     public static int glGenBuffers() {
         IntBuffer intBuffer = BufferUtils.createIntBuffer(32);

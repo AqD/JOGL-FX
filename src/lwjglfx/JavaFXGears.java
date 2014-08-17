@@ -60,8 +60,8 @@ public class JavaFXGears extends Application {
 	public void start(final Stage stage) {
 		stage.setTitle("JavaFX Window");
 
-		stage.setMinWidth(640);
-		stage.setMinHeight(480);
+		stage.setMinWidth(1440);
+		stage.setMinHeight(810);
 
 		stage.getIcons().add(new Image("lwjgl_32x32.png"));
 

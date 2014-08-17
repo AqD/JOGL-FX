@@ -5,9 +5,12 @@
  */
 package org.lwjgl.opengl;
 
+import lwjglfx.JoglFactory;
+
+import javax.media.opengl.GLProfile;
+
 import static javax.media.opengl.GL4bc.*;
 import static org.lwjgl.opengl.JoglWrapper.gl;
-import static org.lwjgl.opengl.JoglWrapper.glProfile;
 
 /**
  * Stub LWJGL ContextCapabilities
@@ -370,22 +373,23 @@ public class ContextCapabilities {
     {
         if (gl == null)
             throw new IllegalStateException();
-        System.out.println("Vendor: " + gl.glGetString(GL_VENDOR));
-        System.out.println("Renderer: " + gl.glGetString(GL_RENDERER));
-        System.out.println("Version: " + gl.glGetString(GL_VERSION));
+        JoglFactory.logger.finest("OpenGL Vendor: " + gl.glGetString(GL_VENDOR));
+        JoglFactory.logger.finest("OpenGL Renderer: " + gl.glGetString(GL_RENDERER));
+        JoglFactory.logger.finest("OpenGL Version: " + gl.glGetString(GL_VERSION));
         String version = gl.glGetString(GL_VERSION).substring(0, 3);
+        GLProfile profile = gl.getGLProfile();
         this.OpenGL11 = true;
         this.OpenGL12 = true;
         this.OpenGL13 = true;
         this.OpenGL14 = true;
         this.OpenGL15 = true;
-        this.OpenGL20 = glProfile.isGL2();
-        this.OpenGL21 = glProfile.isGL3() || version.compareTo("2.1") >= 0;
-        this.OpenGL30 = glProfile.isGL3();
-        this.OpenGL31 = glProfile.isGL4() || version.compareTo("3.1") >= 0;
-        this.OpenGL32 = glProfile.isGL4() || version.compareTo("3.2") >= 0;
-        this.OpenGL33 = glProfile.isGL4() || version.compareTo("3.3") >= 0;
-        this.OpenGL40 = glProfile.isGL4();
+        this.OpenGL20 = profile.isGL2();
+        this.OpenGL21 = profile.isGL3() || version.compareTo("2.1") >= 0;
+        this.OpenGL30 = profile.isGL3();
+        this.OpenGL31 = profile.isGL4() || version.compareTo("3.1") >= 0;
+        this.OpenGL32 = profile.isGL4() || version.compareTo("3.2") >= 0;
+        this.OpenGL33 = profile.isGL4() || version.compareTo("3.3") >= 0;
+        this.OpenGL40 = profile.isGL4();
         this.OpenGL41 = version.compareTo("4.1") >= 0;
         this.OpenGL42 = version.compareTo("4.2") >= 0;
         this.OpenGL43 = version.compareTo("4.3") >= 0;

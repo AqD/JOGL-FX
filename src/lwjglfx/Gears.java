@@ -34,27 +34,24 @@ package lwjglfx;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.ReadOnlyIntegerWrapper;
-import jogamp.opengl.GLDrawableFactoryImpl;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.JoglWrapper;
 import org.lwjgl.util.stream.RenderStream;
 import org.lwjgl.util.stream.StreamHandler;
 import org.lwjgl.util.stream.StreamUtil;
 import org.lwjgl.util.stream.StreamUtil.RenderStreamFactory;
 
-import javax.media.opengl.GL4bc;
 import javax.media.opengl.GLAutoDrawable;
-import javax.media.opengl.GLCapabilities;
 import javax.media.opengl.GLOffscreenAutoDrawable;
-import javax.media.opengl.GLProfile;
 import java.nio.FloatBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static javax.media.opengl.GL4bc.*;
-import static org.lwjgl.opengl.JoglWrapper.factory;
 import static org.lwjgl.opengl.JoglWrapper.gl;
+import static org.lwjgl.opengl.JoglWrapper.glGetInteger;
 
 /**
  * The LWJGL Gears test, modified to use the PBO reader & writer.
@@ -99,33 +96,20 @@ final class Gears {
 
         this.fps = new ReadOnlyIntegerWrapper(this, "fps", 0);
 
-        GLCapabilities caps = new GLCapabilities(GLProfile.get(GLProfile.GL4bc));
-        caps.setHardwareAccelerated(true);
-        caps.setDepthBits(24);
-        // caps.setNumSamples(4);
-        // caps.setSampleBuffers(true);
-        caps.setOnscreen(false);
-        caps.setPBuffer(true);
-        JoglWrapper.glProfile = caps.getGLProfile();
-        JoglWrapper.factory = GLDrawableFactoryImpl.getFactoryImpl(JoglWrapper.glProfile);
-        pbuffer = factory.createOffscreenAutoDrawable(
-                null /* default platform device */,
-                caps,
-                null,
-                1, 1);
-        pbuffer.setRealized(true);
-        JoglWrapper.context = pbuffer.createContext(null);
+        pbuffer = JoglFactory.createPBuffer(1, 1);
         assert (JoglWrapper.context != null);
-        JoglWrapper.context.makeCurrent();
-        JoglWrapper.gl = (GL4bc) JoglWrapper.context.getGL();
         assert (JoglWrapper.gl != null);
 
         Gears.drawable = pbuffer;
 
-        maxSamples = 4;
+        final ContextCapabilities caps = ContextCapabilities.get();
+        if (caps.OpenGL30 || (caps.GL_EXT_framebuffer_multisample && caps.GL_EXT_framebuffer_blit))
+            maxSamples = glGetInteger(GL_MAX_SAMPLES);
+        else
+            maxSamples = 1;
 
         this.renderStreamFactory = StreamUtil.getRenderStreamImplementation();
-        this.renderStream = renderStreamFactory.create(readHandler, 4, transfersToBuffer);
+        this.renderStream = renderStreamFactory.create(readHandler, JoglFactory.getDefaultSamples(), transfersToBuffer);
 
         this.snapshotRequest = new AtomicLong();
         this.snapshotCurrent = -1L;
@@ -246,16 +230,14 @@ final class Gears {
     }
 
     private void resetStreams() {
-        pendingRunnables.offer(new Runnable() {
-            public void run() {
-                // textureStream.destroy();
-                renderStream.destroy();
+        pendingRunnables.offer(() -> {
+            // textureStream.destroy();
+            renderStream.destroy();
 
-                renderStream = renderStreamFactory.create(renderStream.getHandler(), samples, transfersToBuffer);
-                // textureStream = textureStreamFactory.create(textureStream.getHandler(), transfersToBuffer);
+            renderStream = renderStreamFactory.create(renderStream.getHandler(), samples, transfersToBuffer);
+            // textureStream = textureStreamFactory.create(textureStream.getHandler(), transfersToBuffer);
 
-                updateSnapshot();
-            }
+            updateSnapshot();
         });
     }
 

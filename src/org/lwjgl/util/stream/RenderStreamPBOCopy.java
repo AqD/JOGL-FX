@@ -32,6 +32,7 @@
 package org.lwjgl.util.stream;
 
 import org.lwjgl.opengl.ContextCapabilities;
+import lwjglfx.JoglFactory;
 import org.lwjgl.util.stream.StreamUtil.RenderStreamFactory;
 
 import static javax.media.opengl.GL4bc.*;
@@ -60,6 +61,7 @@ final class RenderStreamPBOCopy extends RenderStreamPBO {
 
 	RenderStreamPBOCopy(final StreamHandler handler, final int samples, final int transfersToBuffer, final ReadbackType readbackType) {
 		super(handler, samples, transfersToBuffer, readbackType);
+        JoglFactory.logger.finest(String.format("%s created: msaa %d, %s", this.getClass().getSimpleName(), samples, readbackType));
 	}
 
 	protected void resizeBuffers(final int height, final int stride) {

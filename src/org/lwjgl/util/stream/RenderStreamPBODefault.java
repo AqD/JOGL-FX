@@ -32,6 +32,7 @@
 package org.lwjgl.util.stream;
 
 import org.lwjgl.opengl.ContextCapabilities;
+import lwjglfx.JoglFactory;
 import org.lwjgl.util.stream.StreamUtil.RenderStreamFactory;
 
 import static javax.media.opengl.GL4bc.*;
@@ -66,6 +67,7 @@ final class RenderStreamPBODefault extends RenderStreamPBO {
 		                           // Disable on ATI/AMD GPUs: ARB_copy_buffer is unoptimized on current
 		                           // drivers and kills performance. TODO: Fix?
 		                           !StreamUtil.isAMD(caps)*/;
+        JoglFactory.logger.finest(String.format("%s created: msaa %d, %s, copy-buf=%s", this.getClass().getSimpleName(), samples, readbackType, USE_COPY_BUFFER_SUB_DATA));
 	}
 
 	protected void pinBuffer(final int index) {

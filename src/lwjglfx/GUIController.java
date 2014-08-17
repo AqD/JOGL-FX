@@ -196,6 +196,7 @@ public class GUIController implements Initializable {
                 msaaSamples.setDisable(true);
             else {
                 msaaSamples.setMax(maxSamples);
+                msaaSamples.setValue(Math.min(maxSamples, JoglFactory.getDefaultSamples()));
                 msaaSamples.valueProperty().addListener(new ChangeListener<Number>() {
 
                     public boolean isPoT(final int value) {

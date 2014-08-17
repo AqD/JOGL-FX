@@ -41,12 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static javax.media.opengl.GL4bc.*;
-import static org.lwjgl.opengl.JoglWrapper.gl;
-import static org.lwjgl.opengl.JoglWrapper.glDeleteFramebuffers;
-import static org.lwjgl.opengl.JoglWrapper.glDeleteRenderbuffers;
-import static org.lwjgl.opengl.JoglWrapper.glGenFramebuffers;
-import static org.lwjgl.opengl.JoglWrapper.glGenRenderbuffers;
-import static org.lwjgl.opengl.JoglWrapper.glGenTextures;
+import static org.lwjgl.opengl.JoglWrapper.*;
 
 /** @author Spasi */
 public final class StreamUtil {
@@ -205,7 +200,7 @@ public final class StreamUtil {
 		if ( !(caps.OpenGL30 || (caps.GL_EXT_framebuffer_multisample && caps.GL_EXT_framebuffer_blit)) )
 			throw new UnsupportedOperationException("Multisampled rendering on framebuffer objects is not supported.");
 
-		return 4;
+        return Math.min(samples, glGetInteger(GL_MAX_SAMPLES));
 	}
 
 	static final class PageSizeProvider {
