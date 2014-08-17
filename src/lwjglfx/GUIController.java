@@ -30,12 +30,18 @@ package lwjglfx;/*
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.event.Event;
+import javafx.event.EventDispatchChain;
+import javafx.event.EventDispatcher;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
@@ -43,10 +49,15 @@ import javafx.scene.control.Slider;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
+import javafx.util.Duration;
 import org.lwjgl.util.stream.StreamHandler;
 import org.lwjgl.util.stream.StreamUtil;
 import org.lwjgl.util.stream.StreamUtil.RenderStreamFactory;
+import org.lwjgl.util.stream.StreamUtil.TextureStreamFactory;
 
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -62,88 +73,103 @@ import static javafx.collections.FXCollections.observableList;
 import static javax.media.opengl.GL4bc.*;
 import static org.lwjgl.opengl.JoglWrapper.gl;
 
-/** The JavaFX application GUI controller. */
+/**
+ * The JavaFX application GUI controller.
+ */
 public class GUIController implements Initializable {
 
-	@FXML private AnchorPane gearsRoot;
-	@FXML private ImageView  gearsView;
+    @FXML
+    private AnchorPane gearsRoot;
+    @FXML
+    private ImageView gearsView;
 
-	@FXML private Label fpsLabel;
-	@FXML private Label javaInfoLabel;
-	@FXML private Label systemInfoLabel;
-	@FXML private Label glInfoLabel;
+    @FXML
+    private Label fpsLabel;
+    @FXML
+    private Label javaInfoLabel;
+    @FXML
+    private Label systemInfoLabel;
+    @FXML
+    private Label glInfoLabel;
 
-	@FXML private CheckBox vsync;
+    @FXML
+    private CheckBox vsync;
 
-	@FXML private ChoiceBox<RenderStreamFactory>  renderChoice;
-	@FXML private ChoiceBox<BufferingChoice>      bufferingChoice;
+    @FXML
+    private ChoiceBox<RenderStreamFactory> renderChoice;
+    @FXML
+    private ChoiceBox<TextureStreamFactory> textureChoice;
+    @FXML
+    private ChoiceBox<BufferingChoice> bufferingChoice;
 
-	@FXML private Slider msaaSamples;
+    @FXML
+    private Slider msaaSamples;
 
-	// @FXML private WebView webView;
+    @FXML
+    private WebView webView;
 
-	private WritableImage renderImage;
-	private WritableImage webImage;
+    private WritableImage renderImage;
+    private WritableImage webImage;
 
-	private Gears gears;
+    private Gears gears;
 
-	public GUIController() {
-	}
+    public GUIController() {
+    }
 
-	public void initialize(final URL url, final ResourceBundle resourceBundle) {
-		gearsView.fitWidthProperty().bind(gearsRoot.widthProperty());
-		gearsView.fitHeightProperty().bind(gearsRoot.heightProperty());
+    public void initialize(final URL url, final ResourceBundle resourceBundle) {
+        gearsView.fitWidthProperty().bind(gearsRoot.widthProperty());
+        gearsView.fitHeightProperty().bind(gearsRoot.heightProperty());
 
-		final StringBuilder info = new StringBuilder(128);
-		info
-			.append(System.getProperty("java.vm.name"))
-			.append(' ')
-			.append(System.getProperty("java.version"))
-			.append(' ')
-			.append(System.getProperty("java.vm.version"));
+        final StringBuilder info = new StringBuilder(128);
+        info
+                .append(System.getProperty("java.vm.name"))
+                .append(' ')
+                .append(System.getProperty("java.version"))
+                .append(' ')
+                .append(System.getProperty("java.vm.version"));
 
-		javaInfoLabel.setText(info.toString());
+        javaInfoLabel.setText(info.toString());
 
-		info.setLength(0);
-		info
-			.append(System.getProperty("os.name"))
-			.append(" - JavaFX ")
-			.append(System.getProperty("javafx.runtime.version"));
+        info.setLength(0);
+        info
+                .append(System.getProperty("os.name"))
+                .append(" - JavaFX ")
+                .append(System.getProperty("javafx.runtime.version"));
 
-		systemInfoLabel.setText(info.toString());
+        systemInfoLabel.setText(info.toString());
 
-		bufferingChoice.setItems(observableArrayList(BufferingChoice.values()));
-	}
+        bufferingChoice.setItems(observableArrayList(BufferingChoice.values()));
+    }
 
-	private StreamHandler getReadHandler() {
-		return new StreamHandler() {
+    private StreamHandler getReadHandler() {
+        return new StreamHandler() {
 
-			public int getWidth() {
-				return (int)gearsView.getFitWidth();
-			}
+            public int getWidth() {
+                return (int) gearsView.getFitWidth();
+            }
 
-			public int getHeight() {
-				return (int)gearsView.getFitHeight();
-			}
+            public int getHeight() {
+                return (int) gearsView.getFitHeight();
+            }
 
-			public void process(final int width, final int height, final ByteBuffer data, final int stride, final Semaphore signal) {
+            public void process(final int width, final int height, final ByteBuffer data, final int stride, final Semaphore signal) {
                 assert (data != null);
                 assert (signal != null);
-				// This method runs in the background rendering thread
-				// TODO: Run setPixels on the PlatformImage in this thread, run pixelsDirty on JFX application thread with runLater.
-				Platform.runLater(() -> {
+                // This method runs in the background rendering thread
+                // TODO: Run setPixels on the PlatformImage in this thread, run pixelsDirty on JFX application thread with runLater.
+                Platform.runLater(() -> {
                     try {
                         // If we're quitting, discard update
-                        if ( !gearsView.isVisible() )
+                        if (!gearsView.isVisible())
                             return;
 
                         // Detect resize and recreate the image
-                        if ( renderImage == null || (int)renderImage.getWidth() != width || (int)renderImage.getHeight() != height ) {
+                        if (renderImage == null || (int) renderImage.getWidth() != width || (int) renderImage.getHeight() != height) {
                             renderImage = new WritableImage(width, height);
                             gearsView.setImage(renderImage);
                         }
                         data.rewind();
-                        assert ( data.remaining() == stride * height );
+                        assert (data.remaining() == stride * height);
                         // Upload the image to JavaFX
                         renderImage.getPixelWriter().setPixels(0, 0, width, height, PixelFormat.getByteBgraPreInstance(), data, stride);
                     } finally {
@@ -151,26 +177,55 @@ public class GUIController implements Initializable {
                         signal.release();
                     }
                 });
-			}
-		};
-	}
+            }
+        };
+    }
 
-	// This method will run in the background rendering thread
-	void runGears(final CountDownLatch runningLatch) {
-		try {
-			gears = new Gears(getReadHandler());
-		} catch (Throwable t) {
-			t.printStackTrace();
-			return;
-		}
+    private StreamHandler getWriteHandler() {
+        return new StreamHandler() {
+            public int getWidth() {
+                return (int) webView.getWidth();
+            }
 
-		final List<RenderStreamFactory> renderStreamFactories = StreamUtil.getRenderStreamImplementations();
+            public int getHeight() {
+                return (int) webView.getHeight();
+            }
 
-		final String vendor = gl.glGetString(GL_VENDOR);
-		final String version = gl.glGetString(GL_VERSION);
+            public void process(final int width, final int height, final ByteBuffer buffer, final int stride, final Semaphore signal) {
+                // This method runs in the background rendering thread
+                Platform.runLater(() -> {
+                    if (webImage == null || webImage.getWidth() != width || webImage.getHeight() != height)
+                        webImage = new WritableImage(width, height);
+
+                    webView.snapshot(snapshotResult -> {
+                        snapshotResult.getImage().getPixelReader().getPixels(0, 0, width, height, PixelFormat.getByteBgraPreInstance(), buffer, stride);
+
+                        signal.release();
+                        return null;
+
+                    }, new SnapshotParameters(), webImage);
+                });
+            }
+        };
+    }
+
+    // This method will run in the background rendering thread
+    void runGears(final CountDownLatch runningLatch) {
+        try {
+            gears = new Gears(getReadHandler(), getWriteHandler());
+        } catch (Throwable t) {
+            t.printStackTrace();
+            return;
+        }
+
+        final List<RenderStreamFactory> renderStreamFactories = StreamUtil.getRenderStreamImplementations();
+        final List<TextureStreamFactory> textureStreamFactories = StreamUtil.getTextureStreamImplementations();
+
+        final String vendor = gl.glGetString(GL_VENDOR);
+        final String version = gl.glGetString(GL_VERSION);
         final String renderer = gl.glGetString(GL_RENDERER);
 
-		Platform.runLater(() -> {
+        Platform.runLater(() -> {
             // Listen for FPS changes and update the fps label
             final ReadOnlyIntegerProperty fps = gears.fpsProperty();
 
@@ -178,13 +233,22 @@ public class GUIController implements Initializable {
             glInfoLabel.setText(vendor + "; " + version + "; " + renderer);
 
             renderChoice.setItems(observableList(renderStreamFactories));
-            for ( int i = 0; i < renderStreamFactories.size(); i++ ) {
-                if ( renderStreamFactories.get(i) == gears.getRenderStreamFactory() ) {
+            for (int i = 0; i < renderStreamFactories.size(); i++) {
+                if (renderStreamFactories.get(i) == gears.getRenderStreamFactory()) {
                     renderChoice.getSelectionModel().select(i);
                     break;
                 }
             }
             renderChoice.getSelectionModel().selectedItemProperty().addListener((observableValue, oldValue, newValue) -> gears.setRenderStreamFactory(newValue));
+
+            textureChoice.setItems(observableList(textureStreamFactories));
+            for (int i = 0; i < textureStreamFactories.size(); i++) {
+                if (textureStreamFactories.get(i) == gears.getTextureStreamFactory()) {
+                    textureChoice.getSelectionModel().select(i);
+                    break;
+                }
+            }
+            textureChoice.getSelectionModel().selectedItemProperty().addListener((observableValue, oldValue, newValue) -> gears.setTextureStreamFactory(newValue));
 
             bufferingChoice.getSelectionModel().select(gears.getTransfersToBuffer() - 1);
             bufferingChoice.getSelectionModel().selectedItemProperty().addListener((observableValue, oldValue, newValue) -> gears.setTransfersToBuffer(newValue.getTransfersToBuffer()));
@@ -192,7 +256,7 @@ public class GUIController implements Initializable {
             vsync.selectedProperty().addListener((observableValue, oldValue, newValue) -> gears.setVsync(newValue));
 
             final int maxSamples = gears.getMaxSamples();
-            if ( maxSamples == 1 )
+            if (maxSamples == 1)
                 msaaSamples.setDisable(true);
             else {
                 msaaSamples.setMax(maxSamples);
@@ -219,7 +283,7 @@ public class GUIController implements Initializable {
                         final float value = newValue.floatValue();
                         final int samples = round(value);
 
-                        if ( isPoT(samples) )
+                        if (isPoT(samples))
                             gears.setSamples(samples);
                         else {
                             // Snap to powers of two
@@ -227,43 +291,84 @@ public class GUIController implements Initializable {
                             final int prevPoT = nextPoT >> 1;
 
                             msaaSamples.setValue(
-                                value - prevPoT < nextPoT - value
-                                ? prevPoT
-                                : nextPoT
+                                    value - prevPoT < nextPoT - value
+                                            ? prevPoT
+                                            : nextPoT
                             );
                         }
                     }
                 });
             }
+
+            // Listen for changes to the WebView contents.
+            final ChangeListener<Number> numberListener = (observableValue, oldValue, newValue) -> gears.updateSnapshot();
+
+            webView.widthProperty().addListener(numberListener);
+            webView.heightProperty().addListener(numberListener);
+
+            final WebEngine engine = webView.getEngine();
+
+            engine.getLoadWorker().progressProperty().addListener(numberListener);
+            engine.setOnStatusChanged(e -> gears.updateSnapshot());
+
+            webView.setEventDispatcher(new EventDispatcher() {
+                private final EventDispatcher parent = webView.getEventDispatcher();
+
+                public Event dispatchEvent(final Event e, final EventDispatchChain dispatchChain) {
+                    // Mouse over events within the page will be triggered by the StatusChanged handler above.
+                    if (e.getEventType() != MouseEvent.MOUSE_MOVED && gears != null)
+                        gears.updateSnapshot();
+
+                    return parent.dispatchEvent(e, dispatchChain);
+                }
+            });
+
+            // Force an update every 4 frames for carets.
+            final Timeline timeline = new Timeline();
+            timeline.setCycleCount(Timeline.INDEFINITE);
+            timeline.setAutoReverse(true);
+            timeline.getKeyFrames().add(new KeyFrame(Duration.millis(4 * (1000 / 60)), e -> {
+                if (webView.isFocused())
+                    gears.updateSnapshot();
+            }));
+            timeline.play();
+
+            // Do one last update on focus lost
+            webView.focusedProperty().addListener((observableValue, oldValue, newValue) -> {
+                if (!newValue)
+                    gears.updateSnapshot();
+            });
+
+            webView.getEngine().load("http://www.opengl.org/");
         });
 
-		gears.execute(runningLatch);
-	}
+        gears.execute(runningLatch);
+    }
 
-	private enum BufferingChoice {
-		SINGLE(1, "No buffering"),
-		DOUBLE(2, "Double buffering"),
-		TRIPLE(3, "Triple buffering");
+    private enum BufferingChoice {
+        SINGLE(1, "No buffering"),
+        DOUBLE(2, "Double buffering"),
+        TRIPLE(3, "Triple buffering");
 
-		private final int    transfersToBuffer;
-		private final String description;
+        private final int transfersToBuffer;
+        private final String description;
 
-		private BufferingChoice(final int transfersToBuffer, final String description) {
-			this.transfersToBuffer = transfersToBuffer;
-			this.description = transfersToBuffer + "x - " + description;
-		}
+        private BufferingChoice(final int transfersToBuffer, final String description) {
+            this.transfersToBuffer = transfersToBuffer;
+            this.description = transfersToBuffer + "x - " + description;
+        }
 
-		public int getTransfersToBuffer() {
-			return transfersToBuffer;
-		}
+        public int getTransfersToBuffer() {
+            return transfersToBuffer;
+        }
 
-		public String getDescription() {
-			return description;
-		}
+        public String getDescription() {
+            return description;
+        }
 
-		public String toString() {
-			return description;
-		}
-	}
+        public String toString() {
+            return description;
+        }
+    }
 
 }

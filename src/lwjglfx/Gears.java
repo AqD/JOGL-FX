@@ -41,6 +41,8 @@ import org.lwjgl.util.stream.RenderStream;
 import org.lwjgl.util.stream.StreamHandler;
 import org.lwjgl.util.stream.StreamUtil;
 import org.lwjgl.util.stream.StreamUtil.RenderStreamFactory;
+import org.lwjgl.util.stream.StreamUtil.TextureStreamFactory;
+import org.lwjgl.util.stream.TextureStream;
 
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLOffscreenAutoDrawable;
@@ -74,8 +76,8 @@ final class Gears {
     private RenderStreamFactory renderStreamFactory;
     private RenderStream renderStream;
 
-    // private TextureStreamFactory textureStreamFactory;
-    // private TextureStream        textureStream;
+    private TextureStreamFactory textureStreamFactory;
+    private TextureStream textureStream;
 
     private int gear1;
     private int gear2;
@@ -91,7 +93,7 @@ final class Gears {
     private final AtomicLong snapshotRequest;
     private long snapshotCurrent;
 
-    Gears(final StreamHandler readHandler) {
+    Gears(final StreamHandler readHandler, final StreamHandler writeHandler) {
         this.pendingRunnables = new ConcurrentLinkedQueue<>();
 
         this.fps = new ReadOnlyIntegerWrapper(this, "fps", 0);
@@ -110,6 +112,9 @@ final class Gears {
 
         this.renderStreamFactory = StreamUtil.getRenderStreamImplementation();
         this.renderStream = renderStreamFactory.create(readHandler, JoglFactory.getDefaultSamples(), transfersToBuffer);
+
+        this.textureStreamFactory = StreamUtil.getTextureStreamImplementation();
+        this.textureStream = textureStreamFactory.create(writeHandler, transfersToBuffer);
 
         this.snapshotRequest = new AtomicLong();
         this.snapshotCurrent = -1L;
@@ -132,6 +137,25 @@ final class Gears {
 
             renderStream = renderStreamFactory.create(renderStream.getHandler(), samples, transfersToBuffer);
         });
+    }
+
+    public TextureStreamFactory getTextureStreamFactory() {
+        return textureStreamFactory;
+    }
+
+    public void setTextureStreamFactory(final TextureStreamFactory textureStreamFactory) {
+        pendingRunnables.offer(new Runnable() {
+            public void run() {
+                if ( textureStream != null )
+                    textureStream.destroy();
+
+                Gears.this.textureStreamFactory = textureStreamFactory;
+
+                textureStream = textureStreamFactory.create(textureStream.getHandler(), transfersToBuffer);
+                updateSnapshot();
+            }
+        });
+
     }
 
     private void init() {
@@ -197,7 +221,7 @@ final class Gears {
 
     private void destroy() {
         renderStream.destroy();
-        // textureStream.destroy();
+        textureStream.destroy();
         pbuffer.destroy();
     }
 
@@ -231,11 +255,11 @@ final class Gears {
 
     private void resetStreams() {
         pendingRunnables.offer(() -> {
-            // textureStream.destroy();
+            textureStream.destroy();
             renderStream.destroy();
 
             renderStream = renderStreamFactory.create(renderStream.getHandler(), samples, transfersToBuffer);
-            // textureStream = textureStreamFactory.create(textureStream.getHandler(), transfersToBuffer);
+            textureStream = textureStreamFactory.create(textureStream.getHandler(), transfersToBuffer);
 
             updateSnapshot();
         });
@@ -264,10 +288,10 @@ final class Gears {
 
             final long snapshotRequestID = snapshotRequest.get();
             if (snapshotCurrent < snapshotRequestID) {
-                // textureStream.snapshot();
+                textureStream.snapshot();
                 snapshotCurrent = snapshotRequestID;
             }
-            // textureStream.tick();
+            textureStream.tick();
 
             renderStream.bind();
 
@@ -281,8 +305,8 @@ final class Gears {
             gl.glDisable(GL_LIGHTING);
             gl.glEnable(GL_TEXTURE_2D);
 
-            // textureStream.bind();
-            // drawQuad(textureStream.getWidth(), textureStream.getHeight());
+            textureStream.bind();
+            drawQuad(textureStream.getWidth(), textureStream.getHeight());
             gl.glBindTexture(GL_TEXTURE_2D, 0);
 
             gl.glDisable(GL_TEXTURE_2D);
@@ -333,6 +357,44 @@ final class Gears {
             }
         }
     }
+
+    private static void drawQuad(final int width, final int height) {
+        final float ratio = (float) width / height;
+
+        final float SIZE = 16.0f;
+
+        final float quadW;
+        final float quadH;
+
+        if (ratio <= 1.0f) {
+            quadH = SIZE;
+            quadW = quadH * ratio;
+        } else {
+            quadW = SIZE;
+            quadH = quadW * ratio;
+        }
+
+        gl.glPushMatrix();
+
+        gl.glTranslatef(-quadW * 0.5f, -quadH * 0.5f, -4.0f);
+        gl.glBegin(GL_QUADS);
+        {
+            gl.glTexCoord2f(0.0f, 1.0f);
+            gl.glVertex2f(0.0f, 0.0f);
+
+            gl.glTexCoord2f(1.0f, 1.0f);
+            gl.glVertex2f(quadW, 0.0f);
+
+            gl.glTexCoord2f(1.0f, 0.0f);
+            gl.glVertex2f(quadW, quadH);
+
+            gl.glTexCoord2f(0.0f, 0.0f);
+            gl.glVertex2f(0.0f, quadH);
+        }
+        gl.glEnd();
+        gl.glPopMatrix();
+    }
+
 
     private static float sin(float value) {
         return (float) Math.sin(value);
