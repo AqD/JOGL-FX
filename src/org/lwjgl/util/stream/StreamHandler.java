@@ -44,5 +44,4 @@ public interface StreamHandler {
     int getHeight();
 
     void process(final int width, final int height, ByteBuffer data, final int stride, Semaphore signal);
-
 }

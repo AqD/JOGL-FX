@@ -5,11 +5,9 @@
  */
 package org.lwjgl.opengl;
 
-import org.lwjgl.BufferUtils;
-
-import javax.media.opengl.GL4bc;
-import javax.media.opengl.GLContext;
 import java.nio.IntBuffer;
+import javax.media.opengl.*;
+import org.lwjgl.BufferUtils;
 
 /**
  * Provide LWJGL-only functions to JOGL calls

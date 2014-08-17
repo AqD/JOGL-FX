@@ -30,6 +30,12 @@ package lwjglfx;/*
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+import java.net.URL;
+import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.ResourceBundle;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -49,6 +55,7 @@ import javafx.scene.control.Slider;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
+import javafx.scene.image.WritableImage2;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.web.WebEngine;
@@ -58,13 +65,6 @@ import org.lwjgl.util.stream.StreamHandler;
 import org.lwjgl.util.stream.StreamUtil;
 import org.lwjgl.util.stream.StreamUtil.RenderStreamFactory;
 import org.lwjgl.util.stream.StreamUtil.TextureStreamFactory;
-
-import java.net.URL;
-import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.ResourceBundle;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Semaphore;
 
 import static java.lang.Math.round;
 import static javafx.beans.binding.Bindings.createStringBinding;
@@ -143,6 +143,7 @@ public class GUIController implements Initializable {
 
     private StreamHandler getReadHandler() {
         return new StreamHandler() {
+            protected long lastUpdateTimeMillis;
 
             public int getWidth() {
                 return (int) gearsView.getFitWidth();
@@ -155,22 +156,42 @@ public class GUIController implements Initializable {
             public void process(final int width, final int height, final ByteBuffer data, final int stride, final Semaphore signal) {
                 assert (data != null);
                 assert (signal != null);
+                data.rewind();
+                assert (data.remaining() == stride * height);
+                long currentUpdateTimeMillis = System.currentTimeMillis();
+                if (currentUpdateTimeMillis - lastUpdateTimeMillis < 20) {
+                    signal.release();
+                    return;
+                }
+                lastUpdateTimeMillis = currentUpdateTimeMillis;
+                /*
                 // This method runs in the background rendering thread
-                // TODO: Run setPixels on the PlatformImage in this thread, run pixelsDirty on JFX application thread with runLater.
+                final boolean setNewImage;
+                if (renderImage == null || (int) renderImage.getWidth() != width || (int) renderImage.getHeight() != height) {
+                    renderImage = new WritableImage2(width, height);
+                    setNewImage = true;
+                } else {
+                    setNewImage = false;
+                }
+                // Upload the image to JavaFX
+                renderImage.setPixelsNoNotify(0, 0, width, height, PixelFormat.getByteBgraPreInstance(), data, stride);
+                 */
                 Platform.runLater(() -> {
                     try {
                         // If we're quitting, discard update
                         if (!gearsView.isVisible())
                             return;
-
+                        /*
                         // Detect resize and recreate the image
+                        if (setNewImage) {
+                            gearsView.setImage(renderImage);
+                        }
+                        renderImage.pixelsDirty2();
+                         */
                         if (renderImage == null || (int) renderImage.getWidth() != width || (int) renderImage.getHeight() != height) {
                             renderImage = new WritableImage(width, height);
                             gearsView.setImage(renderImage);
                         }
-                        data.rewind();
-                        assert (data.remaining() == stride * height);
-                        // Upload the image to JavaFX
                         renderImage.getPixelWriter().setPixels(0, 0, width, height, PixelFormat.getByteBgraPreInstance(), data, stride);
                     } finally {
                         // Notify the render thread that we're done processing
@@ -195,14 +216,13 @@ public class GUIController implements Initializable {
                 // This method runs in the background rendering thread
                 Platform.runLater(() -> {
                     if (webImage == null || webImage.getWidth() != width || webImage.getHeight() != height)
-                        webImage = new WritableImage(width, height);
+                        webImage = new WritableImage2(width, height);
 
                     webView.snapshot(snapshotResult -> {
                         snapshotResult.getImage().getPixelReader().getPixels(0, 0, width, height, PixelFormat.getByteBgraPreInstance(), buffer, stride);
 
                         signal.release();
                         return null;
-
                     }, new SnapshotParameters(), webImage);
                 });
             }
@@ -370,5 +390,4 @@ public class GUIController implements Initializable {
             return description;
         }
     }
-
 }

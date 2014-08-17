@@ -105,5 +105,4 @@ final class RenderStreamPBODefault extends RenderStreamPBO {
     protected void postProcess(final int index) {
         gl.glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
     }
-
 }

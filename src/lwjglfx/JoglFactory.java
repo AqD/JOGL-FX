@@ -5,14 +5,13 @@
  */
 package lwjglfx;
 
-import jogamp.opengl.GLDrawableFactoryImpl;
-import org.lwjgl.opengl.JoglWrapper;
-
-import javax.media.opengl.*;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.media.opengl.*;
+import jogamp.opengl.GLDrawableFactoryImpl;
+import org.lwjgl.opengl.JoglWrapper;
 
 /**
  * Provide GL config and initialization

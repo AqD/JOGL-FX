@@ -41,7 +41,6 @@
 package jogamp.opengl;
 
 import com.jogamp.common.util.IntIntHashMap;
-
 import javax.media.opengl.*;
 
 /**
@@ -107,7 +106,6 @@ public class GLBufferStateTracker {
         setBoundBufferObject(GL2.GL_PIXEL_PACK_BUFFER, 0);
         setBoundBufferObject(GL2.GL_PIXEL_UNPACK_BUFFER, 0);
     }
-
 
     /**
      * GL_ARRAY_BUFFER​,

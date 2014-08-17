@@ -5,9 +5,8 @@
  */
 package org.lwjgl.opengl;
 
+import javax.media.opengl.*;
 import lwjglfx.JoglFactory;
-
-import javax.media.opengl.GLProfile;
 
 import static javax.media.opengl.GL4bc.*;
 import static org.lwjgl.opengl.JoglWrapper.gl;

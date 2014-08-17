@@ -61,5 +61,4 @@ abstract class StreamBufferedPBO extends StreamBuffered {
 
         gl.glBindBuffer(pboTarget, 0);
     }
-
 }

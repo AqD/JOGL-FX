@@ -32,7 +32,6 @@
 package org.lwjgl;
 
 import com.jogamp.common.nio.PointerBuffer;
-
 import java.nio.*;
 
 /**
@@ -219,5 +218,4 @@ public final class BufferUtils {
      * @return the memory address
      */
     static native long getBufferAddress(Buffer buffer);
-
 }

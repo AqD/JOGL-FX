@@ -53,7 +53,8 @@ final class RenderStreamPBOCopy extends RenderStreamPBO {
         }
 
         public RenderStream create(final StreamHandler handler, final int samples, final int transfersToBuffer) {
-            return new RenderStreamPBOCopy(handler, samples, transfersToBuffer, ReadbackType.GET_TEX_IMAGE);
+            // UPDATE 2014/08/17: READ_PIXELS on nVIDIA 860M is faster and less problemic here
+            return new RenderStreamPBOCopy(handler, samples, transfersToBuffer, ReadbackType.READ_PIXELS);
         }
     };
 

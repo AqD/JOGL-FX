@@ -77,5 +77,4 @@ public class TextureStreamPBODefault extends TextureStreamPBO {
     public void destroy() {
         destroyObjects();
     }
-
 }

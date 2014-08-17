@@ -191,5 +191,4 @@ abstract class TextureStreamPBO extends StreamBufferedPBO implements TextureStre
     public void destroy() {
         destroyObjects();
     }
-
 }

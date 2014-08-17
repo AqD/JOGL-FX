@@ -85,5 +85,4 @@ public class TextureStreamPBORange extends TextureStreamPBO {
     public void destroy() {
         destroyObjects();
     }
-
 }

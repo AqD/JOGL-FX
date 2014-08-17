@@ -31,13 +31,12 @@
  */
 package org.lwjgl.util.stream;
 
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import lwjglfx.JoglFactory;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.util.stream.StreamUtil.TextureStreamFactory;
-
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 
 import static javax.media.opengl.GL4bc.*;
 import static org.lwjgl.opengl.JoglWrapper.*;
@@ -66,8 +65,6 @@ final class TextureStreamINTEL extends StreamBuffered implements TextureStream {
     private final IntBuffer strideBuffer;
     private final IntBuffer layoutBuffer;
 
-    private final StreamUtil.FBOUtil fboUtil;
-
     private final int texFBO;
     private final int bufferFBO;
 
@@ -84,10 +81,8 @@ final class TextureStreamINTEL extends StreamBuffered implements TextureStream {
         this.strideBuffer = BufferUtils.createIntBuffer(1);
         this.layoutBuffer = BufferUtils.createIntBuffer(1);
 
-        fboUtil = StreamUtil.getFBOUtil(ContextCapabilities.get());
-
-        texFBO = fboUtil.genFramebuffers();
-        bufferFBO = fboUtil.genFramebuffers();
+        texFBO = glGenFramebuffers();
+        bufferFBO = glGenFramebuffers();
 
         buffers = new int[transfersToBuffer];
         JoglFactory.logger.finest(this.getClass().getSimpleName() + ": created");
@@ -126,9 +121,9 @@ final class TextureStreamINTEL extends StreamBuffered implements TextureStream {
 
         texID = StreamUtil.createRenderTexture(width, height, GL_LINEAR);
 
-        fboUtil.bindFramebuffer(GL_DRAW_FRAMEBUFFER, texFBO);
-        fboUtil.framebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texID, 0);
-        fboUtil.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        gl.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, texFBO);
+        gl.glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texID, 0);
+        gl.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
         for (int i = 0; i < buffers.length; i++)
             buffers[i] = genLayoutLinearTexture(width, height);
@@ -208,15 +203,15 @@ final class TextureStreamINTEL extends StreamBuffered implements TextureStream {
     }
 
     private void copyTexture(final int index) {
-        fboUtil.bindFramebuffer(GL_READ_FRAMEBUFFER, bufferFBO);
-        fboUtil.bindFramebuffer(GL_DRAW_FRAMEBUFFER, texFBO);
+        gl.glBindFramebuffer(GL_READ_FRAMEBUFFER, bufferFBO);
+        gl.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, texFBO);
 
-        fboUtil.framebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, buffers[index], 0);
-        fboUtil.blitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-        fboUtil.framebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+        gl.glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, buffers[index], 0);
+        gl.glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        gl.glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
 
-        fboUtil.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        fboUtil.bindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+        gl.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        gl.glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 
         currentIndex++;
     }
@@ -246,8 +241,7 @@ final class TextureStreamINTEL extends StreamBuffered implements TextureStream {
     public void destroy() {
         destroyObjects();
 
-        fboUtil.deleteFramebuffers(bufferFBO);
-        fboUtil.deleteFramebuffers(texFBO);
+        glDeleteFramebuffers(bufferFBO);
+        glDeleteFramebuffers(texFBO);
     }
-
 }

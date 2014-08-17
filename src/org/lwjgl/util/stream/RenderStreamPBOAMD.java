@@ -31,14 +31,13 @@
  */
 package org.lwjgl.util.stream;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import lwjglfx.JoglFactory;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.util.stream.StreamUtil.PageSizeProvider;
 import org.lwjgl.util.stream.StreamUtil.RenderStreamFactory;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 import static javax.media.opengl.GL4bc.*;
 import static org.lwjgl.opengl.JoglWrapper.gl;
@@ -130,5 +129,4 @@ final class RenderStreamPBOAMD extends RenderStreamPBO {
 
         super.destroyObjects();
     }
-
 }

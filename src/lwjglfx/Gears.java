@@ -31,9 +31,14 @@
  */
 package lwjglfx;
 
+import java.nio.FloatBuffer;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicLong;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.ReadOnlyIntegerWrapper;
+import javax.media.opengl.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.JoglWrapper;
@@ -43,13 +48,6 @@ import org.lwjgl.util.stream.StreamUtil;
 import org.lwjgl.util.stream.StreamUtil.RenderStreamFactory;
 import org.lwjgl.util.stream.StreamUtil.TextureStreamFactory;
 import org.lwjgl.util.stream.TextureStream;
-
-import javax.media.opengl.GLAutoDrawable;
-import javax.media.opengl.GLOffscreenAutoDrawable;
-import java.nio.FloatBuffer;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static javax.media.opengl.GL4bc.*;
 import static org.lwjgl.opengl.JoglWrapper.gl;
@@ -155,7 +153,6 @@ final class Gears {
                 updateSnapshot();
             }
         });
-
     }
 
     private void init() {
@@ -394,7 +391,6 @@ final class Gears {
         gl.glEnd();
         gl.glPopMatrix();
     }
-
 
     private static float sin(float value) {
         return (float) Math.sin(value);

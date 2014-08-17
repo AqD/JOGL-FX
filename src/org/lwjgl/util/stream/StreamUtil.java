@@ -31,13 +31,12 @@
  */
 package org.lwjgl.util.stream;
 
-import org.lwjgl.opengl.ContextCapabilities;
-import sun.misc.Unsafe;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
+import org.lwjgl.opengl.ContextCapabilities;
+import sun.misc.Unsafe;
 
 import static javax.media.opengl.GL4bc.*;
 import static org.lwjgl.opengl.JoglWrapper.*;
@@ -68,19 +67,19 @@ public final class StreamUtil {
         return texID;
     }
 
-    static int createRenderBuffer(final FBOUtil fboUtil, final int width, final int height, final int internalformat) {
-        return createRenderBuffer(fboUtil, width, height, 1, internalformat);
+    static int createRenderBuffer(final int width, final int height, final int internalformat) {
+        return createRenderBuffer(width, height, 1, internalformat);
     }
 
-    static int createRenderBuffer(final FBOUtil fboUtil, final int width, final int height, final int samples, final int internalformat) {
-        final int bufferID = fboUtil.genRenderbuffers();
+    static int createRenderBuffer(final int width, final int height, final int samples, final int internalformat) {
+        final int bufferID = glGenRenderbuffers();
 
-        fboUtil.bindRenderbuffer(GL_RENDERBUFFER, bufferID);
+        gl.glBindRenderbuffer(GL_RENDERBUFFER, bufferID);
         if (samples <= 1)
-            fboUtil.renderbufferStorage(GL_RENDERBUFFER, internalformat, width, height);
+            gl.glRenderbufferStorage(GL_RENDERBUFFER, internalformat, width, height);
         else
-            fboUtil.renderbufferStorageMultisample(GL_RENDERBUFFER, samples, internalformat, width, height);
-        fboUtil.bindRenderbuffer(GL_RENDERBUFFER, 0);
+            gl.glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, internalformat, width, height);
+        gl.glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
         return bufferID;
     }
@@ -175,8 +174,8 @@ public final class StreamUtil {
         final List<TextureStreamFactory> list = new ArrayList<>();
 
         addIfSupported(caps, list, TextureStreamINTEL.FACTORY);
-        addIfSupported(caps, list, TextureStreamPBORange.FACTORY);
         addIfSupported(caps, list, TextureStreamPBODefault.FACTORY);
+        addIfSupported(caps, list, TextureStreamPBORange.FACTORY);   // NOT faster than PBODefault
 
         return list;
     }
@@ -203,7 +202,6 @@ public final class StreamUtil {
         public String toString() {
             return description;
         }
-
     }
 
     public abstract static class RenderStreamFactory extends StreamFactory<RenderStream> {
@@ -213,7 +211,6 @@ public final class StreamUtil {
         }
 
         public abstract RenderStream create(StreamHandler handler, int samples, int transfersToBuffer);
-
     }
 
     public abstract static class TextureStreamFactory extends StreamFactory<TextureStream> {
@@ -223,7 +220,6 @@ public final class StreamUtil {
         }
 
         public abstract TextureStream create(StreamHandler handler, int transfersToBuffer);
-
     }
 
     static int checkSamples(final int samples, final ContextCapabilities caps) {
@@ -283,130 +279,4 @@ public final class StreamUtil {
             throw new UnsupportedOperationException();
         }
     }
-
-    interface FBOUtil {
-
-        int genFramebuffers();
-
-        void bindFramebuffer(int target, int framebuffer);
-
-        void framebufferTexture2D(int target, int attachment, int textarget, int texture, int level);
-
-        void framebufferRenderbuffer(int target, int attachment, int renderbuffertarget, int renderbuffer);
-
-        void deleteFramebuffers(int framebuffer);
-
-        int genRenderbuffers();
-
-        void bindRenderbuffer(int target, int renderbuffer);
-
-        void renderbufferStorage(int target, int internalformat, int width, int height);
-
-        void renderbufferStorageMultisample(int target, int samples, int internalformat, int width, int height);
-
-        void blitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, int mask, int filter);
-
-        void deleteRenderbuffers(int renderbuffer);
-
-    }
-
-    static FBOUtil getFBOUtil(final ContextCapabilities caps) {
-        if (caps.OpenGL30 || caps.GL_ARB_framebuffer_object)
-            return new FBOUtil() {
-                public int genFramebuffers() {
-                    return glGenFramebuffers();
-                }
-
-                public void bindFramebuffer(int target, int framebuffer) {
-                    gl.glBindFramebuffer(target, framebuffer);
-                }
-
-                public void framebufferTexture2D(int target, int attachment, int textarget, int texture, int level) {
-                    gl.glFramebufferTexture2D(target, attachment, textarget, texture, level);
-                }
-
-                public void framebufferRenderbuffer(int target, int attachment, int renderbuffertarget, int renderbuffer) {
-                    gl.glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer);
-                }
-
-                public void deleteFramebuffers(int framebuffer) {
-                    glDeleteFramebuffers(framebuffer);
-                }
-
-                public int genRenderbuffers() {
-                    return glGenRenderbuffers();
-                }
-
-                public void bindRenderbuffer(int target, int renderbuffer) {
-                    gl.glBindRenderbuffer(target, renderbuffer);
-                }
-
-                public void renderbufferStorage(int target, int internalformat, int width, int height) {
-                    gl.glRenderbufferStorage(target, internalformat, width, height);
-                }
-
-                public void renderbufferStorageMultisample(int target, int samples, int internalformat, int width, int height) {
-                    gl.glRenderbufferStorageMultisample(target, samples, internalformat, width, height);
-                }
-
-                public void blitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, int mask, int filter) {
-                    gl.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
-                }
-
-                public void deleteRenderbuffers(int renderbuffer) {
-                    glDeleteRenderbuffers(renderbuffer);
-                }
-            };
-        /*
-        else if ( caps.GL_EXT_framebuffer_object )
-			return new FBOUtil() {
-				public int genFramebuffers() {
-					return glGenFramebuffersEXT();
-				}
-
-				public void bindFramebuffer(int target, int framebuffer) {
-					glBindFramebufferEXT(target, framebuffer);
-				}
-
-				public void framebufferTexture2D(int target, int attachment, int textarget, int texture, int level) {
-					glFramebufferTexture2DEXT(target, attachment, textarget, texture, level);
-				}
-
-				public void framebufferRenderbuffer(int target, int attachment, int renderbuffertarget, int renderbuffer) {
-					glFramebufferRenderbufferEXT(target, attachment, renderbuffertarget, renderbuffer);
-				}
-
-				public void deleteFramebuffers(int framebuffer) {
-					glDeleteFramebuffersEXT(framebuffer);
-				}
-
-				public int genRenderbuffers() {
-					return glGenRenderbuffersEXT();
-				}
-
-				public void bindRenderbuffer(int target, int renderbuffer) {
-					glBindRenderbufferEXT(target, renderbuffer);
-				}
-
-				public void renderbufferStorage(int target, int internalformat, int width, int height) {
-					glRenderbufferStorageEXT(target, internalformat, width, height);
-				}
-
-				public void renderbufferStorageMultisample(int target, int samples, int internalformat, int width, int height) {
-					glRenderbufferStorageMultisampleEXT(target, samples, internalformat, width, height);
-				}
-
-				public void blitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, int mask, int filter) {
-					glBlitFramebufferEXT(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
-				}
-
-				public void deleteRenderbuffers(int renderbuffer) {
-					glDeleteRenderbuffersEXT(renderbuffer);
-				}
-			};
-			*/
-        else
-            throw new UnsupportedOperationException("Framebuffer object is not available.");
-    }
-
 }

@@ -31,13 +31,12 @@
  */
 package org.lwjgl.util.stream;
 
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import lwjglfx.JoglFactory;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.util.stream.StreamUtil.RenderStreamFactory;
-
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 
 import static javax.media.opengl.GL4bc.*;
 import static org.lwjgl.opengl.JoglWrapper.*;
@@ -66,7 +65,6 @@ final class RenderStreamINTEL extends StreamBuffered implements RenderStream {
     private final IntBuffer strideBuffer;
     private final IntBuffer layoutBuffer;
 
-    private final StreamUtil.FBOUtil fboUtil;
     private final int renderFBO;
 
     private int rgbaBuffer;
@@ -87,10 +85,9 @@ final class RenderStreamINTEL extends StreamBuffered implements RenderStream {
         this.strideBuffer = BufferUtils.createIntBuffer(1);
         this.layoutBuffer = BufferUtils.createIntBuffer(1);
 
-        fboUtil = StreamUtil.getFBOUtil(caps);
-        renderFBO = fboUtil.genFramebuffers();
+        renderFBO = glGenFramebuffers();
 
-        resolveFBO = fboUtil.genFramebuffers();
+        resolveFBO = glGenFramebuffers();
         resolveBuffers = new int[transfersToBuffer];
 
         this.samples = StreamUtil.checkSamples(samples, caps);
@@ -119,17 +116,17 @@ final class RenderStreamINTEL extends StreamBuffered implements RenderStream {
 
         // Setup render FBO
 
-        fboUtil.bindFramebuffer(GL_DRAW_FRAMEBUFFER, renderFBO);
+        gl.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, renderFBO);
 
-        rgbaBuffer = StreamUtil.createRenderBuffer(fboUtil, width, height, samples, GL_RGBA8);
-        fboUtil.framebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rgbaBuffer);
+        rgbaBuffer = StreamUtil.createRenderBuffer(width, height, samples, GL_RGBA8);
+        gl.glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rgbaBuffer);
 
-        depthBuffer = StreamUtil.createRenderBuffer(fboUtil, width, height, samples, GL_DEPTH24_STENCIL8);
-        fboUtil.framebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
+        depthBuffer = StreamUtil.createRenderBuffer(width, height, samples, GL_DEPTH24_STENCIL8);
+        gl.glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
 
         gl.glViewport(0, 0, width, height);
 
-        fboUtil.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        gl.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
         for (int i = 0; i < resolveBuffers.length; i++)
             resolveBuffers[i] = genLayoutLinearTexture(width, height);
@@ -153,7 +150,7 @@ final class RenderStreamINTEL extends StreamBuffered implements RenderStream {
         if (this.width != handler.getWidth() || this.height != handler.getHeight())
             resize(handler.getWidth(), handler.getHeight());
 
-        fboUtil.bindFramebuffer(GL_DRAW_FRAMEBUFFER, renderFBO);
+        gl.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, renderFBO);
     }
 
     private void prepareFramebuffer(final int trgTEX) {
@@ -161,15 +158,15 @@ final class RenderStreamINTEL extends StreamBuffered implements RenderStream {
         if (processingState.get(trgTEX))
             waitForProcessingToComplete(trgTEX);
 
-        fboUtil.bindFramebuffer(GL_READ_FRAMEBUFFER, renderFBO);
-        fboUtil.bindFramebuffer(GL_DRAW_FRAMEBUFFER, resolveFBO);
+        gl.glBindFramebuffer(GL_READ_FRAMEBUFFER, renderFBO);
+        gl.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, resolveFBO);
 
         // Blit current texture
-        fboUtil.framebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, resolveBuffers[trgTEX], 0);
-        fboUtil.blitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        gl.glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, resolveBuffers[trgTEX], 0);
+        gl.glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-        fboUtil.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        fboUtil.bindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+        gl.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        gl.glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
     }
 
     public void swapBuffers() {
@@ -255,8 +252,8 @@ final class RenderStreamINTEL extends StreamBuffered implements RenderStream {
                 waitForProcessingToComplete(i);
         }
 
-        if (rgbaBuffer != 0) fboUtil.deleteRenderbuffers(rgbaBuffer);
-        if (depthBuffer != 0) fboUtil.deleteRenderbuffers(depthBuffer);
+        if (rgbaBuffer != 0) glDeleteRenderbuffers(rgbaBuffer);
+        if (depthBuffer != 0) glDeleteRenderbuffers(depthBuffer);
 
         for (int i = 0; i < resolveBuffers.length; i++) {
             glDeleteTextures(resolveBuffers[i]);
@@ -268,8 +265,7 @@ final class RenderStreamINTEL extends StreamBuffered implements RenderStream {
         destroyObjects();
 
         if (resolveFBO != 0)
-            fboUtil.deleteFramebuffers(resolveFBO);
-        fboUtil.deleteFramebuffers(renderFBO);
+            glDeleteFramebuffers(resolveFBO);
+        glDeleteFramebuffers(renderFBO);
     }
-
 }

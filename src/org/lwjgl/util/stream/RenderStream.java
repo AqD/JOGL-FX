@@ -43,5 +43,4 @@ public interface RenderStream {
     void swapBuffers();
 
     void destroy();
-
 }

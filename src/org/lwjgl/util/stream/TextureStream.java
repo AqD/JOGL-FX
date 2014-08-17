@@ -49,5 +49,4 @@ public interface TextureStream {
     void bind();
 
     void destroy();
-
 }

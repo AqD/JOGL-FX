@@ -31,6 +31,8 @@
  */
 package lwjglfx;
 
+import java.net.URL;
+import java.util.concurrent.CountDownLatch;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -40,9 +42,6 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
-
-import java.net.URL;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * The JavaFX application entry point
@@ -116,5 +115,4 @@ public class JavaFXGears extends Application {
             }
         }.start();
     }
-
 }

@@ -88,5 +88,4 @@ abstract class StreamBuffered {
     }
 
     protected abstract void postProcess(int index);
-
 }
