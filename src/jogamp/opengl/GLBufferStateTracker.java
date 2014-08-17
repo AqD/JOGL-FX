@@ -101,55 +101,69 @@ public class GLBufferStateTracker {
 
         // Start with known unbound targets for known keys
         // setBoundBufferObject(GL2ES3.GL_VERTEX_ARRAY_BINDING, 0); // not using default VAO (removed in GL3 core) - only explicit
-        setBoundBufferObject(GL.GL_ARRAY_BUFFER,         0);
+        setBoundBufferObject(GL.GL_ARRAY_BUFFER, 0);
         setBoundBufferObject(GL4.GL_DRAW_INDIRECT_BUFFER, 0);
         setBoundBufferObject(GL.GL_ELEMENT_ARRAY_BUFFER, 0);
-        setBoundBufferObject(GL2.GL_PIXEL_PACK_BUFFER,   0);
+        setBoundBufferObject(GL2.GL_PIXEL_PACK_BUFFER, 0);
         setBoundBufferObject(GL2.GL_PIXEL_UNPACK_BUFFER, 0);
     }
 
 
     /**
-     *  GL_ARRAY_BUFFER​,
-     *  GL_ATOMIC_COUNTER_BUFFER​,
-     *  GL_COPY_READ_BUFFER​,
-     *  GL_COPY_WRITE_BUFFER​,
-     *  GL_DRAW_INDIRECT_BUFFER​,
-     *  GL_DISPATCH_INDIRECT_BUFFER​,
-     *  GL_ELEMENT_ARRAY_BUFFER​,
-     *  GL_PIXEL_PACK_BUFFER​,
-     *  GL_PIXEL_UNPACK_BUFFER​,
-     *  GL_SHADER_STORAGE_BUFFER​,
-     *  GL_TEXTURE_BUFFER​,
-     *  GL_TRANSFORM_FEEDBACK_BUFFER​ or
-     *  GL_UNIFORM_BUFFER​.
-     *
-     *  GL_VERTEX_ARRAY_BINDING
-     *
+     * GL_ARRAY_BUFFER​,
+     * GL_ATOMIC_COUNTER_BUFFER​,
+     * GL_COPY_READ_BUFFER​,
+     * GL_COPY_WRITE_BUFFER​,
+     * GL_DRAW_INDIRECT_BUFFER​,
+     * GL_DISPATCH_INDIRECT_BUFFER​,
+     * GL_ELEMENT_ARRAY_BUFFER​,
+     * GL_PIXEL_PACK_BUFFER​,
+     * GL_PIXEL_UNPACK_BUFFER​,
+     * GL_SHADER_STORAGE_BUFFER​,
+     * GL_TEXTURE_BUFFER​,
+     * GL_TRANSFORM_FEEDBACK_BUFFER​ or
+     * GL_UNIFORM_BUFFER​.
+     * <p>
+     * GL_VERTEX_ARRAY_BINDING
      */
     private static final int getQueryName(final int target) {
         switch (target) {
-            case GL.GL_ARRAY_BUFFER:                  return GL.GL_ARRAY_BUFFER_BINDING;
-            case GL4.GL_ATOMIC_COUNTER_BUFFER:        return GL4.GL_ATOMIC_COUNTER_BUFFER_BINDING;
-            case GL2ES3.GL_COPY_READ_BUFFER:          return GL2ES3.GL_COPY_READ_BUFFER_BINDING;
-            case GL2ES3.GL_COPY_WRITE_BUFFER:         return GL2ES3.GL_COPY_WRITE_BUFFER_BINDING;
-            case GL4.GL_DRAW_INDIRECT_BUFFER:         return GL4.GL_DRAW_INDIRECT_BUFFER_BINDING;
-            case GL4.GL_DISPATCH_INDIRECT_BUFFER:     return GL4.GL_DISPATCH_INDIRECT_BUFFER_BINDING;
-            case GL.GL_ELEMENT_ARRAY_BUFFER:          return GL.GL_ELEMENT_ARRAY_BUFFER_BINDING;
-            case GL2.GL_PIXEL_PACK_BUFFER:            return GL2.GL_PIXEL_PACK_BUFFER_BINDING;
-            case GL2.GL_PIXEL_UNPACK_BUFFER:          return GL2.GL_PIXEL_UNPACK_BUFFER_BINDING;
+            case GL.GL_ARRAY_BUFFER:
+                return GL.GL_ARRAY_BUFFER_BINDING;
+            case GL4.GL_ATOMIC_COUNTER_BUFFER:
+                return GL4.GL_ATOMIC_COUNTER_BUFFER_BINDING;
+            case GL2ES3.GL_COPY_READ_BUFFER:
+                return GL2ES3.GL_COPY_READ_BUFFER_BINDING;
+            case GL2ES3.GL_COPY_WRITE_BUFFER:
+                return GL2ES3.GL_COPY_WRITE_BUFFER_BINDING;
+            case GL4.GL_DRAW_INDIRECT_BUFFER:
+                return GL4.GL_DRAW_INDIRECT_BUFFER_BINDING;
+            case GL4.GL_DISPATCH_INDIRECT_BUFFER:
+                return GL4.GL_DISPATCH_INDIRECT_BUFFER_BINDING;
+            case GL.GL_ELEMENT_ARRAY_BUFFER:
+                return GL.GL_ELEMENT_ARRAY_BUFFER_BINDING;
+            case GL2.GL_PIXEL_PACK_BUFFER:
+                return GL2.GL_PIXEL_PACK_BUFFER_BINDING;
+            case GL2.GL_PIXEL_UNPACK_BUFFER:
+                return GL2.GL_PIXEL_UNPACK_BUFFER_BINDING;
             // FIXME case GL4.GL_QUERY_BUFFER:              return GL4.GL_QUERY_BUFFER_BINDING;
-            case GL4.GL_SHADER_STORAGE_BUFFER:        return GL4.GL_SHADER_STORAGE_BUFFER_BINDING;
-            case GL2GL3.GL_TEXTURE_BUFFER:            return GL2GL3.GL_TEXTURE_BINDING_BUFFER;
-            case GL2ES3.GL_TRANSFORM_FEEDBACK_BUFFER: return GL2ES3.GL_TRANSFORM_FEEDBACK_BUFFER_BINDING;
-            case GL2ES3.GL_UNIFORM_BUFFER:            return GL2ES3.GL_UNIFORM_BUFFER_BINDING;
+            case GL4.GL_SHADER_STORAGE_BUFFER:
+                return GL4.GL_SHADER_STORAGE_BUFFER_BINDING;
+            case GL2GL3.GL_TEXTURE_BUFFER:
+                return GL2GL3.GL_TEXTURE_BINDING_BUFFER;
+            case GL2ES3.GL_TRANSFORM_FEEDBACK_BUFFER:
+                return GL2ES3.GL_TRANSFORM_FEEDBACK_BUFFER_BINDING;
+            case GL2ES3.GL_UNIFORM_BUFFER:
+                return GL2ES3.GL_UNIFORM_BUFFER_BINDING;
 
-            case GL2ES3.GL_VERTEX_ARRAY_BINDING:      return GL2ES3.GL_VERTEX_ARRAY_BINDING;
+            case GL2ES3.GL_VERTEX_ARRAY_BINDING:
+                return GL2ES3.GL_VERTEX_ARRAY_BINDING;
 
             default:
                 throw new GLException(String.format("GL_INVALID_ENUM​: Invalid binding target 0x%X", target));
         }
     }
+
     private static final void checkTargetName(final int target) {
         switch (target) {
             case GL.GL_ARRAY_BUFFER:
@@ -179,10 +193,11 @@ public class GLBufferStateTracker {
     /**
      * Must be called when binding a buffer, e.g.:
      * <ul>
-     *   <li><code>glBindBuffer</code></li>
-     *   <li><code>glBindBufferBase</code></li>
-     *   <li><code>glBindBufferRange</code></li>
+     * <li><code>glBindBuffer</code></li>
+     * <li><code>glBindBufferBase</code></li>
+     * <li><code>glBindBufferRange</code></li>
      * </ul>
+     *
      * @param target
      * @param bufferName
      */
@@ -212,10 +227,12 @@ public class GLBufferStateTracker {
         }
     }
 
-    /** Note: returns an unspecified value if the binding for the
-     specified target (e.g. GL_ARRAY_BUFFER) is currently unknown.
-     You must use isBoundBufferObjectKnown() to see whether the
-     return value is valid. */
+    /**
+     * Note: returns an unspecified value if the binding for the
+     * specified target (e.g. GL_ARRAY_BUFFER) is currently unknown.
+     * You must use isBoundBufferObjectKnown() to see whether the
+     * return value is valid.
+     */
     public final int getBoundBufferObject(int target, GL caller) {
         int value = bindingMap.get(target);
         if (bindingNotFound == value) {
@@ -223,18 +240,18 @@ public class GLBufferStateTracker {
             // glPopClientAttrib or is querying an unknown target. See
             // whether we know how to fetch this state.
             final int queryTarget = getQueryName(target);
-            if ( 0 != queryTarget ) {
+            if (0 != queryTarget) {
                 final int glerrPre = caller.glGetError(); // clear
                 caller.glGetIntegerv(queryTarget, bufTmp, 0);
                 final int glerrPost = caller.glGetError(); // be safe, e.g. GL '3.0 Mesa 8.0.4' may produce an error querying GL_PIXEL_UNPACK_BUFFER_BINDING, ignore value
-                if(GL.GL_NO_ERROR == glerrPost) {
+                if (GL.GL_NO_ERROR == glerrPost) {
                     value = bufTmp[0];
                 } else {
                     value = 0;
                 }
                 if (DEBUG) {
-                    System.err.println("GLBufferStateTracker.getBoundBufferObject() glerr[pre "+toHexString(glerrPre)+", post "+toHexString(glerrPost)+"], [queried value]: target " +
-                            toHexString(target) + " / query "+toHexString(queryTarget)+
+                    System.err.println("GLBufferStateTracker.getBoundBufferObject() glerr[pre " + toHexString(glerrPre) + ", post " + toHexString(glerrPost) + "], [queried value]: target " +
+                            toHexString(target) + " / query " + toHexString(queryTarget) +
                             " -> mapped bound buffer " + toHexString(value));
                 }
                 setBoundBufferObject(target, value);
@@ -250,19 +267,24 @@ public class GLBufferStateTracker {
         return value;
     }
 
-    /** Clears out the known/unknown state of the various buffer object
-     binding states. These will be refreshed later on an as-needed
-     basis. This is called by the implementations of
-     glPushClientAttrib / glPopClientAttrib. Might want to call this
-     from GLContext.makeCurrent() in the future to possibly increase
-     the robustness of these caches in the face of external native
-     code manipulating OpenGL state. */
+    /**
+     * Clears out the known/unknown state of the various buffer object
+     * binding states. These will be refreshed later on an as-needed
+     * basis. This is called by the implementations of
+     * glPushClientAttrib / glPopClientAttrib. Might want to call this
+     * from GLContext.makeCurrent() in the future to possibly increase
+     * the robustness of these caches in the face of external native
+     * code manipulating OpenGL state.
+     */
     public final void clear() {
         if (DEBUG) {
-            System.err.println("GLBufferStateTracker.clear() - Thread "+Thread.currentThread().getName());
+            System.err.println("GLBufferStateTracker.clear() - Thread " + Thread.currentThread().getName());
             // Thread.dumpStack();
         }
         bindingMap.clear();
     }
-    private final String toHexString(int i) { return Integer.toHexString(i); }
+
+    private final String toHexString(int i) {
+        return Integer.toHexString(i);
+    }
 }

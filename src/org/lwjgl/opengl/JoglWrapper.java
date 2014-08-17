@@ -7,7 +7,8 @@ package org.lwjgl.opengl;
 
 import org.lwjgl.BufferUtils;
 
-import javax.media.opengl.*;
+import javax.media.opengl.GL4bc;
+import javax.media.opengl.GLContext;
 import java.nio.IntBuffer;
 
 /**
@@ -32,15 +33,13 @@ public final class JoglWrapper {
         return intBuffer.get(0);
     }
 
-    public static int glGenFramebuffers()
-    {
+    public static int glGenFramebuffers() {
         IntBuffer intBuffer = BufferUtils.createIntBuffer(32);
         gl.glGenFramebuffers(1, intBuffer);
         return intBuffer.get(0);
     }
 
-    public static int glGenRenderbuffers()
-    {
+    public static int glGenRenderbuffers() {
         IntBuffer intBuffer = BufferUtils.createIntBuffer(32);
         gl.glGenRenderbuffers(1, intBuffer);
         return intBuffer.get(0);

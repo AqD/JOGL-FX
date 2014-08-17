@@ -21,8 +21,7 @@ public class ContextCapabilities {
 
     protected static ContextCapabilities instance;
 
-    public static ContextCapabilities get()
-    {
+    public static ContextCapabilities get() {
         if (instance == null)
             instance = new ContextCapabilities();
         return instance;
@@ -369,8 +368,7 @@ public class ContextCapabilities {
     public final boolean GL_SGIS_texture_lod;
     public final boolean GL_SUN_slice_accum;
 
-    protected ContextCapabilities()
-    {
+    protected ContextCapabilities() {
         if (gl == null)
             throw new IllegalStateException();
         JoglFactory.logger.finest("OpenGL Vendor: " + gl.glGetString(GL_VENDOR));

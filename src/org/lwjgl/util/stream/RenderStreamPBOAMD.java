@@ -31,9 +31,9 @@
  */
 package org.lwjgl.util.stream;
 
+import lwjglfx.JoglFactory;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.ContextCapabilities;
-import lwjglfx.JoglFactory;
 import org.lwjgl.util.stream.StreamUtil.PageSizeProvider;
 import org.lwjgl.util.stream.StreamUtil.RenderStreamFactory;
 
@@ -44,89 +44,91 @@ import static javax.media.opengl.GL4bc.*;
 import static org.lwjgl.opengl.JoglWrapper.gl;
 import static org.lwjgl.opengl.JoglWrapper.glGenBuffers;
 
-/** Optimized StreamPBOReader for AMD GPUs: Asynchronous ReadPixels to AMD_pinned_memory buffers. */
+/**
+ * Optimized StreamPBOReader for AMD GPUs: Asynchronous ReadPixels to AMD_pinned_memory buffers.
+ */
 final class RenderStreamPBOAMD extends RenderStreamPBO {
 
-	public static final RenderStreamFactory FACTORY = new RenderStreamFactory("AMD_pinned_memory") {
-		public boolean isSupported(final ContextCapabilities caps) {
-			return caps.GL_AMD_pinned_memory && (caps.OpenGL32 || caps.GL_ARB_sync);
-		}
+    public static final RenderStreamFactory FACTORY = new RenderStreamFactory("AMD_pinned_memory") {
+        public boolean isSupported(final ContextCapabilities caps) {
+            return caps.GL_AMD_pinned_memory && (caps.OpenGL32 || caps.GL_ARB_sync);
+        }
 
-		public RenderStream create(final StreamHandler handler, final int samples, final int transfersToBuffer) {
-			return new RenderStreamPBOAMD(handler, samples, transfersToBuffer);
-		}
-	};
+        public RenderStream create(final StreamHandler handler, final int samples, final int transfersToBuffer) {
+            return new RenderStreamPBOAMD(handler, samples, transfersToBuffer);
+        }
+    };
 
-	private final long[] fences;
+    private final long[] fences;
 
-	RenderStreamPBOAMD(final StreamHandler handler, final int samples, final int transfersToBuffer) {
-		super(handler, samples, transfersToBuffer, ReadbackType.READ_PIXELS);
+    RenderStreamPBOAMD(final StreamHandler handler, final int samples, final int transfersToBuffer) {
+        super(handler, samples, transfersToBuffer, ReadbackType.READ_PIXELS);
 
-		fences = new long[this.transfersToBuffer];
+        fences = new long[this.transfersToBuffer];
         JoglFactory.logger.finest(String.format("%s created: msaa %d, %s", this.getClass().getSimpleName(), samples, ReadbackType.READ_PIXELS));
-	}
+    }
 
-	protected void resizeBuffers(final int height, final int stride) {
-		final int renderBytes = height * stride;
+    protected void resizeBuffers(final int height, final int stride) {
+        final int renderBytes = height * stride;
 
-		for ( int i = 0; i < pbos.length; i++ ) {
-			pbos[i] = glGenBuffers();
+        for (int i = 0; i < pbos.length; i++) {
+            pbos[i] = glGenBuffers();
 
-			gl.glBindBuffer(GL_EXTERNAL_VIRTUAL_MEMORY_BUFFER_AMD, pbos[i]);
+            gl.glBindBuffer(GL_EXTERNAL_VIRTUAL_MEMORY_BUFFER_AMD, pbos[i]);
 
-			// Pre-allocate page-aligned pinned buffers
-			final int PAGE_SIZE = PageSizeProvider.PAGE_SIZE;
+            // Pre-allocate page-aligned pinned buffers
+            final int PAGE_SIZE = PageSizeProvider.PAGE_SIZE;
 
-			final ByteBuffer buffer = BufferUtils.createByteBuffer(renderBytes + PAGE_SIZE);
+            final ByteBuffer buffer = BufferUtils.createByteBuffer(renderBytes + PAGE_SIZE);
             // WTF rely on native memory position???
             /*
-			final int pageOffset = (int)(MemoryUtil.getAddress(buffer) % PAGE_SIZE);
+            final int pageOffset = (int)(MemoryUtil.getAddress(buffer) % PAGE_SIZE);
 			 */
             final int pageOffset = 0;
-			buffer.position(PAGE_SIZE - pageOffset); // Aligns to page
-			buffer.limit(buffer.capacity() - pageOffset); // Caps remaining() to renderBytes
+            buffer.position(PAGE_SIZE - pageOffset); // Aligns to page
+            buffer.limit(buffer.capacity() - pageOffset); // Caps remaining() to renderBytes
 
-			pinnedBuffers[i] = buffer.slice().order(ByteOrder.nativeOrder());
-			gl.glBufferData(GL_EXTERNAL_VIRTUAL_MEMORY_BUFFER_AMD, pinnedBuffers[i].remaining(), pinnedBuffers[i], GL_STREAM_READ);
-		}
+            pinnedBuffers[i] = buffer.slice().order(ByteOrder.nativeOrder());
+            gl.glBufferData(GL_EXTERNAL_VIRTUAL_MEMORY_BUFFER_AMD, pinnedBuffers[i].remaining(), pinnedBuffers[i], GL_STREAM_READ);
+        }
 
-		gl.glBindBuffer(GL_EXTERNAL_VIRTUAL_MEMORY_BUFFER_AMD, 0);
-	}
+        gl.glBindBuffer(GL_EXTERNAL_VIRTUAL_MEMORY_BUFFER_AMD, 0);
+    }
 
-	protected void readBack(final int index) {
-		super.readBack(index);
+    protected void readBack(final int index) {
+        super.readBack(index);
 
-		// Insert a fence after ReadPixels
-		fences[index] = gl.glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-	}
+        // Insert a fence after ReadPixels
+        fences[index] = gl.glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+    }
 
-	protected void pinBuffer(final int index) {
-		if ( fences[index] != 0 ) // Wait for ReadPixels on the PBO to complete
-			StreamUtil.waitOnFence(fences, index);
-	}
+    protected void pinBuffer(final int index) {
+        if (fences[index] != 0) // Wait for ReadPixels on the PBO to complete
+            StreamUtil.waitOnFence(fences, index);
+    }
 
-	protected void copyFrames(final int src, final int trg) {
-		StreamUtil.waitOnFence(fences, src);
+    protected void copyFrames(final int src, final int trg) {
+        StreamUtil.waitOnFence(fences, src);
 
-		final ByteBuffer srcBuffer = pinnedBuffers[src];
-		final ByteBuffer trgBuffer = pinnedBuffers[trg];
+        final ByteBuffer srcBuffer = pinnedBuffers[src];
+        final ByteBuffer trgBuffer = pinnedBuffers[trg];
 
-		trgBuffer.put(srcBuffer);
+        trgBuffer.put(srcBuffer);
 
-		trgBuffer.flip();
-		srcBuffer.flip();
-	}
+        trgBuffer.flip();
+        srcBuffer.flip();
+    }
 
-	protected void postProcess(final int index) {
-	}
+    protected void postProcess(final int index) {
+    }
 
-	protected void destroyObjects() {
-		for ( int i = 0; i < fences.length; i++ ) {
-			if ( fences[i] != 0 )
-				StreamUtil.waitOnFence(fences, i);
-		}
+    protected void destroyObjects() {
+        for (int i = 0; i < fences.length; i++) {
+            if (fences[i] != 0)
+                StreamUtil.waitOnFence(fences, i);
+        }
 
-		super.destroyObjects();
-	}
+        super.destroyObjects();
+    }
 
 }

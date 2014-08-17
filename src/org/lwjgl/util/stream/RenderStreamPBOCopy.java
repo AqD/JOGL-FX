@@ -31,53 +31,53 @@
  */
 package org.lwjgl.util.stream;
 
-import org.lwjgl.opengl.ContextCapabilities;
 import lwjglfx.JoglFactory;
+import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.util.stream.StreamUtil.RenderStreamFactory;
 
 import static javax.media.opengl.GL4bc.*;
-import static org.lwjgl.opengl.JoglWrapper.gl;
-import static org.lwjgl.opengl.JoglWrapper.glDeleteBuffers;
-import static org.lwjgl.opengl.JoglWrapper.glGenBuffers;
+import static org.lwjgl.opengl.JoglWrapper.*;
 
-/** Default StreamPBOReader implementation: Asynchronous ReadPixels to PBOs */
+/**
+ * Default StreamPBOReader implementation: Asynchronous ReadPixels to PBOs
+ */
 final class RenderStreamPBOCopy extends RenderStreamPBO {
 
-	public static final RenderStreamFactory FACTORY = new RenderStreamFactory("ARB_copy_buffer") {
-		public boolean isSupported(final ContextCapabilities caps) {
-			return RenderStreamPBODefault.FACTORY.isSupported(caps)
-			       && caps.GL_ARB_copy_buffer
-			       && caps.GL_NV_gpu_program5 // Nvidia only
-			       && (caps.OpenGL40 || caps.GL_ARB_tessellation_shader) // Fermi+
-				;
-		}
+    public static final RenderStreamFactory FACTORY = new RenderStreamFactory("ARB_copy_buffer") {
+        public boolean isSupported(final ContextCapabilities caps) {
+            return RenderStreamPBODefault.FACTORY.isSupported(caps)
+                    && caps.GL_ARB_copy_buffer
+                    && caps.GL_NV_gpu_program5 // Nvidia only
+                    && (caps.OpenGL40 || caps.GL_ARB_tessellation_shader) // Fermi+
+                    ;
+        }
 
-		public RenderStream create(final StreamHandler handler, final int samples, final int transfersToBuffer) {
-			return new RenderStreamPBOCopy(handler, samples, transfersToBuffer, ReadbackType.GET_TEX_IMAGE);
-		}
-	};
+        public RenderStream create(final StreamHandler handler, final int samples, final int transfersToBuffer) {
+            return new RenderStreamPBOCopy(handler, samples, transfersToBuffer, ReadbackType.GET_TEX_IMAGE);
+        }
+    };
 
-	private int devicePBO;
+    private int devicePBO;
 
-	RenderStreamPBOCopy(final StreamHandler handler, final int samples, final int transfersToBuffer, final ReadbackType readbackType) {
-		super(handler, samples, transfersToBuffer, readbackType);
+    RenderStreamPBOCopy(final StreamHandler handler, final int samples, final int transfersToBuffer, final ReadbackType readbackType) {
+        super(handler, samples, transfersToBuffer, readbackType);
         JoglFactory.logger.finest(String.format("%s created: msaa %d, %s", this.getClass().getSimpleName(), samples, readbackType));
-	}
+    }
 
-	protected void resizeBuffers(final int height, final int stride) {
-		super.resizeBuffers(height, stride);
+    protected void resizeBuffers(final int height, final int stride) {
+        super.resizeBuffers(height, stride);
 
-		devicePBO = glGenBuffers();
+        devicePBO = glGenBuffers();
 
-		gl.glBindBuffer(GL_PIXEL_PACK_BUFFER, devicePBO);
+        gl.glBindBuffer(GL_PIXEL_PACK_BUFFER, devicePBO);
         gl.glBufferData(GL_PIXEL_PACK_BUFFER, height * stride, null, GL_STREAM_COPY); // Should allocate device memory
         gl.glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-	}
+    }
 
-	protected void readBack(final int index) {
+    protected void readBack(final int index) {
         gl.glBindBuffer(GL_PIXEL_PACK_BUFFER, devicePBO);
 
-		super.readBack(index);
+        super.readBack(index);
 
         gl.glBindBuffer(GL_COPY_WRITE_BUFFER, pbos[index]);
 
@@ -85,20 +85,20 @@ final class RenderStreamPBOCopy extends RenderStreamPBO {
 
         gl.glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
         gl.glBindBuffer(GL_COPY_READ_BUFFER, 0);
-	}
+    }
 
-	protected void pinBuffer(final int index) {
+    protected void pinBuffer(final int index) {
         gl.glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[index]);
 
-		// We don't need to manually synchronized here, MapBuffer will block until ReadPixels above has finished.
-		// The buffer will be unmapped in waitForProcessingToComplete
-		// pinnedBuffers[index] = gl.glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY, height * stride, pinnedBuffers[index]); AQD
+        // We don't need to manually synchronized here, MapBuffer will block until ReadPixels above has finished.
+        // The buffer will be unmapped in waitForProcessingToComplete
+        // pinnedBuffers[index] = gl.glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY, height * stride, pinnedBuffers[index]); AQD
         pinnedBuffers[index] = gl.glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
 
         gl.glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-	}
+    }
 
-	protected void copyFrames(final int src, final int trg) {
+    protected void copyFrames(final int src, final int trg) {
         gl.glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[src]);
         gl.glBindBuffer(GL_COPY_WRITE_BUFFER, pbos[trg]);
 
@@ -106,14 +106,14 @@ final class RenderStreamPBOCopy extends RenderStreamPBO {
 
         gl.glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
         gl.glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-	}
+    }
 
-	protected void postProcess(final int index) {
+    protected void postProcess(final int index) {
         gl.glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
-	}
+    }
 
-	protected void destroyObjects() {
+    protected void destroyObjects() {
         glDeleteBuffers(devicePBO);
-		super.destroyObjects();
-	}
+        super.destroyObjects();
+    }
 }

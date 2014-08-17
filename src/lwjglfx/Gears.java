@@ -146,7 +146,7 @@ final class Gears {
     public void setTextureStreamFactory(final TextureStreamFactory textureStreamFactory) {
         pendingRunnables.offer(new Runnable() {
             public void run() {
-                if ( textureStream != null )
+                if (textureStream != null)
                     textureStream.destroy();
 
                 Gears.this.textureStreamFactory = textureStreamFactory;

@@ -44,75 +44,77 @@ import javafx.stage.Stage;
 import java.net.URL;
 import java.util.concurrent.CountDownLatch;
 
-/** The JavaFX application entry point */
+/**
+ * The JavaFX application entry point
+ */
 public class JavaFXGears extends Application {
 
-	private final CountDownLatch runningLatch = new CountDownLatch(1);
+    private final CountDownLatch runningLatch = new CountDownLatch(1);
 
-	public JavaFXGears() {
-	}
+    public JavaFXGears() {
+    }
 
-	public static void main(String[] args) {
-		Application.launch(args);
-	}
+    public static void main(String[] args) {
+        Application.launch(args);
+    }
 
-	@Override
-	public void start(final Stage stage) {
-		stage.setTitle("JavaFX Window");
+    @Override
+    public void start(final Stage stage) {
+        stage.setTitle("JavaFX Window");
 
-		stage.setMinWidth(1440);
-		stage.setMinHeight(810);
+        stage.setMinWidth(1440);
+        stage.setMinHeight(810);
 
-		stage.getIcons().add(new Image("lwjgl_32x32.png"));
+        stage.getIcons().add(new Image("lwjgl_32x32.png"));
 
-		final Screen screen = Screen.getPrimary();
-		final Rectangle2D screenBounds = screen.getVisualBounds();
+        final Screen screen = Screen.getPrimary();
+        final Rectangle2D screenBounds = screen.getVisualBounds();
 
-		if ( screenBounds.getWidth() < stage.getWidth() || screenBounds.getHeight() < stage.getHeight() ) {
-			stage.setX(screenBounds.getMinX());
-			stage.setY(screenBounds.getMinY());
+        if (screenBounds.getWidth() < stage.getWidth() || screenBounds.getHeight() < stage.getHeight()) {
+            stage.setX(screenBounds.getMinX());
+            stage.setY(screenBounds.getMinY());
 
-			stage.setWidth(screenBounds.getWidth());
-			stage.setHeight(screenBounds.getHeight());
-		}
+            stage.setWidth(screenBounds.getWidth());
+            stage.setHeight(screenBounds.getHeight());
+        }
 
-		final URL fxmlURL = getClass().getClassLoader().getResource("gears.fxml");
-		final FXMLLoader fxmlLoader = new FXMLLoader(fxmlURL);
+        final URL fxmlURL = getClass().getClassLoader().getResource("gears.fxml");
+        final FXMLLoader fxmlLoader = new FXMLLoader(fxmlURL);
 
-		Pane content;
-		try {
-			content = (Pane)fxmlLoader.load();
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(-1);
-			return;
-		}
+        Pane content;
+        try {
+            content = (Pane) fxmlLoader.load();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(-1);
+            return;
+        }
 
-		final GUIController controller = fxmlLoader.getController();
+        final GUIController controller = fxmlLoader.getController();
 
-		try {
-			final Scene scene = new Scene(content);
-			scene.getStylesheets().add(getClass().getClassLoader().getResource("gears.css").toExternalForm());
+        try {
+            final Scene scene = new Scene(content);
+            scene.getStylesheets().add(getClass().getClassLoader().getResource("gears.css").toExternalForm());
 
-			stage.setScene(scene);
-			stage.show();
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(-1);
-			return;
-		}
+            stage.setScene(scene);
+            stage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(-1);
+            return;
+        }
 
-		stage.setOnCloseRequest(e -> {
+        stage.setOnCloseRequest(e -> {
             e.consume();
             runningLatch.countDown();
         });
 
-		new Thread("LWJGL Renderer") {
-			public void run() {
-				controller.runGears(runningLatch);
-				Platform.runLater(() -> stage.close());
-			}
-		}.start();
-	}
+        new Thread("LWJGL Renderer") {
+            public void run() {
+                controller.runGears(runningLatch);
+                Platform.runLater(() -> stage.close());
+            }
+        }.start();
+    }
 
 }

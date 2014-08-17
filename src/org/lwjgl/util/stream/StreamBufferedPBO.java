@@ -31,33 +31,35 @@
  */
 package org.lwjgl.util.stream;
 
-import static org.lwjgl.opengl.JoglWrapper.glGenBuffers;
 import static org.lwjgl.opengl.JoglWrapper.gl;
+import static org.lwjgl.opengl.JoglWrapper.glGenBuffers;
 
-/** Base functionality for streaming PBO transfers. */
+/**
+ * Base functionality for streaming PBO transfers.
+ */
 abstract class StreamBufferedPBO extends StreamBuffered {
 
-	protected final int[] pbos;
+    protected final int[] pbos;
 
-	protected StreamBufferedPBO(final StreamHandler handler, final int transfersToBuffer) {
-		super(handler, transfersToBuffer);
+    protected StreamBufferedPBO(final StreamHandler handler, final int transfersToBuffer) {
+        super(handler, transfersToBuffer);
 
-		pbos = new int[transfersToBuffer];
-	}
+        pbos = new int[transfersToBuffer];
+    }
 
-	protected void resizeBuffers(final int height, final int stride, final int pboTarget, final int pboUsage) {
-		final int renderBytes = height * stride;
+    protected void resizeBuffers(final int height, final int stride, final int pboTarget, final int pboUsage) {
+        final int renderBytes = height * stride;
 
-		for ( int i = 0; i < pbos.length; i++ ) {
-			pbos[i] = glGenBuffers();
+        for (int i = 0; i < pbos.length; i++) {
+            pbos[i] = glGenBuffers();
 
-			gl.glBindBuffer(pboTarget, pbos[i]);
-			gl.glBufferData(pboTarget, renderBytes, null, pboUsage);
+            gl.glBindBuffer(pboTarget, pbos[i]);
+            gl.glBufferData(pboTarget, renderBytes, null, pboUsage);
 
-			pinnedBuffers[i] = null;
-		}
+            pinnedBuffers[i] = null;
+        }
 
-		gl.glBindBuffer(pboTarget, 0);
-	}
+        gl.glBindBuffer(pboTarget, 0);
+    }
 
 }

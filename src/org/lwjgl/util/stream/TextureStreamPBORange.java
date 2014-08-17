@@ -36,52 +36,54 @@ import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.util.stream.StreamUtil.TextureStreamFactory;
 
 import static javax.media.opengl.GL4bc.*;
-import static org.lwjgl.opengl.JoglWrapper.*;
+import static org.lwjgl.opengl.JoglWrapper.gl;
 
-/** Implements streaming PBO updates to an OpenGL texture. */
+/**
+ * Implements streaming PBO updates to an OpenGL texture.
+ */
 public class TextureStreamPBORange extends TextureStreamPBO {
 
-	public static final TextureStreamFactory FACTORY = new TextureStreamFactory("ARB_map_buffer_range") {
-		public boolean isSupported(final ContextCapabilities caps) {
-			return TextureStreamPBODefault.FACTORY.isSupported(caps) && (caps.OpenGL30 || caps.GL_ARB_map_buffer_range);
-		}
+    public static final TextureStreamFactory FACTORY = new TextureStreamFactory("ARB_map_buffer_range") {
+        public boolean isSupported(final ContextCapabilities caps) {
+            return TextureStreamPBODefault.FACTORY.isSupported(caps) && (caps.OpenGL30 || caps.GL_ARB_map_buffer_range);
+        }
 
-		public TextureStream create(final StreamHandler handler, final int transfersToBuffer) {
-			return new TextureStreamPBORange(handler, transfersToBuffer);
-		}
-	};
+        public TextureStream create(final StreamHandler handler, final int transfersToBuffer) {
+            return new TextureStreamPBORange(handler, transfersToBuffer);
+        }
+    };
 
-	private final long[] fences;
+    private final long[] fences;
 
-	public TextureStreamPBORange(final StreamHandler handler, final int transfersToBuffer) {
-		super(handler, transfersToBuffer);
+    public TextureStreamPBORange(final StreamHandler handler, final int transfersToBuffer) {
+        super(handler, transfersToBuffer);
 
-		fences = new long[this.transfersToBuffer];
+        fences = new long[this.transfersToBuffer];
         JoglFactory.logger.finest(this.getClass().getSimpleName() + ": created");
-	}
+    }
 
-	protected void postUpload(final int index) {
-		fences[index] = gl.glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-	}
+    protected void postUpload(final int index) {
+        fences[index] = gl.glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+    }
 
-	protected void postProcess(final int index) {
-		gl.glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
-	}
+    protected void postProcess(final int index) {
+        gl.glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+    }
 
-	public void pinBuffer(final int index) {
-		if ( fences[index] != 0 ) // Wait for TexSubImage to complete
-			StreamUtil.waitOnFence(fences, index);
+    public void pinBuffer(final int index) {
+        if (fences[index] != 0) // Wait for TexSubImage to complete
+            StreamUtil.waitOnFence(fences, index);
 
-		gl.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbos[index]);
-		// gl.glBufferData(GL_PIXEL_UNPACK_BUFFER, height * stride, GL_STREAM_DRAW); // Orphan previous buffer
+        gl.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbos[index]);
+        // gl.glBufferData(GL_PIXEL_UNPACK_BUFFER, height * stride, GL_STREAM_DRAW); // Orphan previous buffer
         gl.glBufferData(GL_PIXEL_UNPACK_BUFFER, height * stride, null, GL_STREAM_DRAW); // Orphan previous buffer
-		// pinnedBuffers[index] = gl.glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, height * stride, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT, pinnedBuffers[index]);
+        // pinnedBuffers[index] = gl.glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, height * stride, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT, pinnedBuffers[index]);
         pinnedBuffers[index] = gl.glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, height * stride, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
-		gl.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-	}
+        gl.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+    }
 
-	public void destroy() {
-		destroyObjects();
-	}
+    public void destroy() {
+        destroyObjects();
+    }
 
 }

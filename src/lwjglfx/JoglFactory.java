@@ -24,8 +24,7 @@ public final class JoglFactory {
 
     public static final Logger logger = Logger.getLogger("lwjglfx");
 
-    static
-    {
+    static {
         Handler handler = new ConsoleHandler();
         handler.setLevel(Level.ALL);
         logger.addHandler(handler);
