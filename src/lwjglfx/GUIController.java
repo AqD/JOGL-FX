@@ -54,7 +54,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelFormat;
-import javafx.scene.image.WritableImage;
 import javafx.scene.image.WritableImage2;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
@@ -108,8 +107,7 @@ public class GUIController implements Initializable {
     @FXML
     private WebView webView;
 
-    private WritableImage renderImage;
-    private WritableImage webImage;
+    private WritableImage2 webImage;
 
     private Gears gears;
 
@@ -143,6 +141,8 @@ public class GUIController implements Initializable {
 
     private StreamHandler getReadHandler() {
         return new StreamHandler() {
+            protected WritableImage2 renderImageCurr;
+            protected WritableImage2 renderImageNext;
             protected long lastUpdateTimeMillis;
 
             public int getWidth() {
@@ -158,6 +158,7 @@ public class GUIController implements Initializable {
                 assert (signal != null);
                 data.rewind();
                 assert (data.remaining() == stride * height);
+                // TODO: vsync with offscreen drawable??
                 long currentUpdateTimeMillis = System.currentTimeMillis();
                 if (currentUpdateTimeMillis - lastUpdateTimeMillis < 20) {
                     signal.release();
@@ -165,31 +166,14 @@ public class GUIController implements Initializable {
                 }
                 lastUpdateTimeMillis = currentUpdateTimeMillis;
                 /*
-                // This method runs in the background rendering thread
-                final boolean setNewImage;
-                if (renderImage == null || (int) renderImage.getWidth() != width || (int) renderImage.getHeight() != height) {
-                    renderImage = new WritableImage2(width, height);
-                    setNewImage = true;
-                } else {
-                    setNewImage = false;
-                }
-                // Upload the image to JavaFX
-                renderImage.setPixelsNoNotify(0, 0, width, height, PixelFormat.getByteBgraPreInstance(), data, stride);
-                 */
                 Platform.runLater(() -> {
                     try {
                         // If we're quitting, discard update
                         if (!gearsView.isVisible())
                             return;
-                        /*
                         // Detect resize and recreate the image
-                        if (setNewImage) {
-                            gearsView.setImage(renderImage);
-                        }
-                        renderImage.pixelsDirty2();
-                         */
                         if (renderImage == null || (int) renderImage.getWidth() != width || (int) renderImage.getHeight() != height) {
-                            renderImage = new WritableImage(width, height);
+                            renderImage = new WritableImage2(width, height);
                             gearsView.setImage(renderImage);
                         }
                         renderImage.getPixelWriter().setPixels(0, 0, width, height, PixelFormat.getByteBgraPreInstance(), data, stride);
@@ -198,6 +182,35 @@ public class GUIController implements Initializable {
                         signal.release();
                     }
                 });
+                 */
+                ensureRenderImages(width, height);
+                renderImageNext.setPixelsNoNotify(0, 0, width, height, PixelFormat.getByteBgraPreInstance(), data, stride);
+                swapRenderImages();
+                Platform.runLater(() -> {
+                    try {
+                        if (!gearsView.isVisible())
+                            return;
+                        gearsView.setImage(renderImageCurr);
+                    } finally {
+                        // Notify the render thread that we're done processing
+                        signal.release();
+                    }
+                });
+            }
+
+            protected void ensureRenderImages(int width, int height) {
+                if (renderImageCurr == null || (int) renderImageCurr.getWidth() != width || (int) renderImageCurr.getHeight() != height) {
+                    renderImageCurr = new WritableImage2(width, height);
+                }
+                if (renderImageNext == null || (int) renderImageNext.getWidth() != width || (int) renderImageNext.getHeight() != height) {
+                    renderImageNext = new WritableImage2(width, height);
+                }
+            }
+
+            protected void swapRenderImages() {
+                WritableImage2 renderImageTemp = renderImageCurr;
+                renderImageCurr = renderImageNext;
+                renderImageNext = renderImageTemp;
             }
         };
     }

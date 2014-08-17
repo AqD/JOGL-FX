@@ -142,16 +142,14 @@ final class Gears {
     }
 
     public void setTextureStreamFactory(final TextureStreamFactory textureStreamFactory) {
-        pendingRunnables.offer(new Runnable() {
-            public void run() {
-                if (textureStream != null)
-                    textureStream.destroy();
+        pendingRunnables.offer(() -> {
+            if (textureStream != null)
+                textureStream.destroy();
 
-                Gears.this.textureStreamFactory = textureStreamFactory;
+            Gears.this.textureStreamFactory = textureStreamFactory;
 
-                textureStream = textureStreamFactory.create(textureStream.getHandler(), transfersToBuffer);
-                updateSnapshot();
-            }
+            textureStream = textureStreamFactory.create(textureStream.getHandler(), transfersToBuffer);
+            updateSnapshot();
         });
     }
 

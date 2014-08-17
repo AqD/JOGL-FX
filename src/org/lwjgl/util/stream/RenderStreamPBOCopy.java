@@ -47,8 +47,8 @@ final class RenderStreamPBOCopy extends RenderStreamPBO {
         public boolean isSupported(final ContextCapabilities caps) {
             return RenderStreamPBODefault.FACTORY.isSupported(caps)
                     && caps.GL_ARB_copy_buffer
-                    && caps.GL_NV_gpu_program5 // Nvidia only
-                    && (caps.OpenGL40 || caps.GL_ARB_tessellation_shader) // Fermi+
+                    // && caps.GL_NV_gpu_program5 // Nvidia only
+                    // && (caps.OpenGL40 || caps.GL_ARB_tessellation_shader) // Fermi+
                     ;
         }
 

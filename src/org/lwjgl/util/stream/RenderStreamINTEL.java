@@ -31,7 +31,6 @@
  */
 package org.lwjgl.util.stream;
 
-import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import lwjglfx.JoglFactory;
 import org.lwjgl.BufferUtils;
@@ -141,7 +140,7 @@ final class RenderStreamINTEL extends StreamBuffered implements RenderStream {
         gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MEMORY_LAYOUT_INTEL, GL_LAYOUT_LINEAR_CPU_CACHED_INTEL);
-        gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, (ByteBuffer) null);
+        gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, null);
 
         return texID;
     }
@@ -226,6 +225,7 @@ final class RenderStreamINTEL extends StreamBuffered implements RenderStream {
 
         // pinnedBuffers[index] = gl.glMapTexture2DINTEL(texID, 0, height * stride, GL_MAP_READ_BIT, strideBuffer, layoutBuffer, pinnedBuffers[index]);
         pinnedBuffers[index] = gl.glMapTexture2DINTEL(texID, 0, GL_MAP_READ_BIT, strideBuffer, layoutBuffer);
+        // System.out.println(String.format("size should be %d, actual %d", height * stride, pinnedBuffers[index].capacity()));
         // TODO: Row alignment is currently hardcoded to 16 pixels
         // We wouldn't need to do that if we could create a ByteBuffer
         // from an arbitrary address + length. Consider for LWJGL 3.0?
