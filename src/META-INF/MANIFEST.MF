@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Class-Path: jogl-all.jar gluegen-rt.jar gluegen-rt-natives-linux-amd64
+ .jar gluegen-rt-natives-linux-i586.jar gluegen-rt-natives-macosx-univ
+ ersal.jar gluegen-rt-natives-windows-amd64.jar gluegen-rt-natives-win
+ dows-i586.jar jogl-all-natives-linux-amd64.jar jogl-all-natives-macos
+ x-universal.jar jogl-all-natives-linux-i586.jar jogl-all-natives-wind
+ ows-amd64.jar jogl-all-natives-windows-i586.jar
+Main-Class: lwjglfx.JavaFXGears
+
