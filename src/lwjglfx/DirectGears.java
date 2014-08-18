@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
+import javafx.scene.SceneAntialiasing;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 import javafx.stage.Screen;
@@ -36,10 +37,6 @@ public class DirectGears extends Application {
     public void start(final Stage stage) {
         assert (factory != null);
         stage.setTitle("DirectGears");
-
-        stage.setWidth(1440);
-        stage.setHeight(810);
-
         stage.getIcons().add(new Image("lwjgl_32x32.png"));
 
         final Screen screen = Screen.getPrimary();
@@ -65,7 +62,7 @@ public class DirectGears extends Application {
             return;
         }
         try {
-            final Scene scene = new Scene(content);
+            final Scene scene = new Scene(content, 1440, 810, true, SceneAntialiasing.BALANCED);
             scene.getStylesheets().add(getClass().getClassLoader().getResource("gears.css").toExternalForm());
 
             stage.setScene(scene);
