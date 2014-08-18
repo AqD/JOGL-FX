@@ -31,14 +31,9 @@
  */
 package lwjglfx;
 
-import java.nio.FloatBuffer;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicLong;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.ReadOnlyIntegerWrapper;
-import javax.media.opengl.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.ContextCapabilities;
 import org.lwjgl.opengl.JoglWrapper;
@@ -48,6 +43,13 @@ import org.lwjgl.util.stream.StreamUtil;
 import org.lwjgl.util.stream.StreamUtil.RenderStreamFactory;
 import org.lwjgl.util.stream.StreamUtil.TextureStreamFactory;
 import org.lwjgl.util.stream.TextureStream;
+
+import javax.media.opengl.GLAutoDrawable;
+import javax.media.opengl.GLOffscreenAutoDrawable;
+import java.nio.FloatBuffer;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static javax.media.opengl.GL4bc.*;
 import static org.lwjgl.opengl.JoglWrapper.gl;
@@ -353,7 +355,7 @@ final class Gears {
         }
     }
 
-    private static void drawQuad(final int width, final int height) {
+    public static void drawQuad(final int width, final int height) {
         final float ratio = (float) width / height;
 
         final float SIZE = 16.0f;
@@ -408,7 +410,7 @@ final class Gears {
      * @param teeth        number of teeth
      * @param tooth_depth  depth of tooth
      */
-    private static void gear(float inner_radius, float outer_radius, float width, int teeth, float tooth_depth) {
+    public static void gear(float inner_radius, float outer_radius, float width, int teeth, float tooth_depth) {
         int i;
         float r0, r1, r2;
         float angle, da;

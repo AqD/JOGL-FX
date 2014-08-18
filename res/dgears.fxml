@@ -1,0 +1,29 @@
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.StackPane?>
+<?import lwjglfx.MyCanvas?>
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="lwjglfx.DirectGearsController">
+    <top>
+        <ToolBar>
+            <Button text="Hello"></Button>
+        </ToolBar>
+    </top>
+    <center>
+        <TabPane tabClosingPolicy="UNAVAILABLE">
+            <Tab text="3D">
+                <content>
+                    <StackPane fx:id="root"
+                            style="-fx-background-color: #007700;">
+                        <MyCanvas fx:id="canvas" />
+                    </StackPane>
+                </content>
+            </Tab>
+            <Tab text="2nd"></Tab>
+        </TabPane>
+    </center>
+    <bottom>
+        <ToolBar>
+            <Button text="World"></Button>
+        </ToolBar>
+    </bottom>
+</BorderPane>

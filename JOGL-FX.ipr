@@ -177,7 +177,11 @@
   </component>
   <component name="ProjectCodeStyleSettingsManager">
     <option name="PER_PROJECT_SETTINGS">
-      <value />
+      <value>
+        <XML>
+          <option name="XML_LEGACY_SETTINGS_IMPORTED" value="true" />
+        </XML>
+      </value>
     </option>
     <option name="PREFERRED_PROJECT_CODE_STYLE" value="My Default" />
   </component>
@@ -196,6 +200,25 @@
     <configuration default="false" name="JavaFXGears" type="Application" factoryName="Application" singleton="true">
       <option name="MAIN_CLASS_NAME" value="lwjglfx.JavaFXGears" />
       <option name="VM_PARAMETERS" value="-ea -Dcom.sun.management.jmxremote" />
+      <option name="PROGRAM_PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" value="" />
+      <option name="ENABLE_SWING_INSPECTOR" value="false" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <module name="JOGL-FX" />
+      <envs />
+      <RunnerSettings RunnerId="JProfiler">
+        <option name="WINDOW" value="false" />
+      </RunnerSettings>
+      <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Run" />
+      <method />
+    </configuration>
+    <configuration default="false" name="DirectGears" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="lwjglfx.DirectGears" />
+      <option name="VM_PARAMETERS" value="-ea -Dprism.order=es2" />
       <option name="PROGRAM_PARAMETERS" value="" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
